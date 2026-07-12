@@ -210,7 +210,7 @@ export default function JobDetail() {
                       <Icon className="h-3.5 w-3.5 shrink-0" />
                       {item.label}
                     </p>
-                    <p className="break-words text-[0.9375rem] font-semibold leading-[1.45] text-ink [overflow-wrap:anywhere]">
+                    <p className="break-words text-sm font-medium leading-[1.5] text-ink [overflow-wrap:anywhere]">
                       {item.value}
                     </p>
                   </div>
