@@ -3,6 +3,9 @@ import { useSearchParams } from 'react-router-dom';
 import {
   Briefcase,
   Building2,
+  Download,
+  ExternalLink,
+  FileText,
   GraduationCap,
   Mail,
   MapPin,
@@ -14,7 +17,7 @@ import {
   Wallet,
   X,
 } from 'lucide-react';
-import { Badge, Button, Card } from '@/components/ui';
+import { Badge, Button, Card, StatusPill } from '@/components/ui';
 import { CandidateFormFields } from '@/components/candidates/CandidateFormFields';
 import {
   buildCandidatePayload,
@@ -23,6 +26,7 @@ import {
 } from '@/components/candidates/candidateForm';
 import { SKILL_TYPE_LABEL } from '@/constants/choices';
 import { useUpdateCandidate } from '@/hooks/useCandidates';
+import { useCandidateResume } from '@/hooks/useResumes';
 import { useToast } from '@/context/ToastContext';
 import { apiErrorMessage } from '@/lib/apiError';
 import { formatDate, formatYears } from '@/lib/format';
@@ -33,6 +37,7 @@ import type { Candidate } from '@/types/api';
 export function CandidateOverview({ candidate }: { candidate: Candidate }) {
   const toast = useToast();
   const update = useUpdateCandidate(candidate.id);
+  const { data: resume, isLoading: resumeLoading } = useCandidateResume(candidate.id);
   const [searchParams, setSearchParams] = useSearchParams();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<CandidateFormState>(() => candidateToForm(candidate));
@@ -115,6 +120,52 @@ export function CandidateOverview({ candidate }: { candidate: Candidate }) {
           <Info label="Relevant experience" value={formatYears(candidate.relevant_experience_years)} />
           {candidate.address && <Info icon={MapPin} label="Address" value={candidate.address} />}
         </div>
+      </Card>
+
+      <Card className="p-5">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="flex items-center gap-2 text-base font-semibold text-ink">
+            <FileText className="h-4 w-4 text-brand-500" />
+            Resume
+          </h3>
+          {resume?.parse_status && <StatusPill status={resume.parse_status} />}
+        </div>
+        {resume?.file ? (
+          <div className="flex flex-col gap-3 rounded-2xl border border-line bg-surface/50 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex min-w-0 items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-500/12 text-brand-600 dark:text-brand-300">
+                <FileText className="h-5 w-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-[0.9375rem] font-semibold text-ink">
+                  {resume.original_filename || 'Resume file'}
+                </p>
+                <p className="mt-0.5 text-xs text-muted">
+                  Uploaded {formatDate(resume.uploaded_at)}
+                  {resume.file_type ? ` · ${resume.file_type.toUpperCase()}` : ''}
+                </p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <a className="btn ghost sm" href={resume.file} target="_blank" rel="noreferrer">
+                <ExternalLink className="h-4 w-4" />
+                View
+              </a>
+              <a className="btn ghost sm" href={resume.file} download>
+                <Download className="h-4 w-4" />
+                Download
+              </a>
+            </div>
+          </div>
+        ) : resumeLoading ? (
+          <p className="text-sm text-muted">Loading resume…</p>
+        ) : (
+          <p className="text-sm text-muted">
+            {resume
+              ? 'A resume record exists but no file is stored.'
+              : 'No resume uploaded for this candidate yet.'}
+          </p>
+        )}
       </Card>
 
       <Card className="p-5">
