@@ -39,6 +39,14 @@ ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1")
 # frontend and API domains. Required once the SPA is served from another host.
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS", "")
 
+# Render injects RENDER_EXTERNAL_HOSTNAME (e.g. "hiretrack-api-5ltg.onrender.com")
+# automatically. Trust it so ALLOWED_HOSTS / CSRF work on the platform domain
+# without hand-maintaining the exact (suffixed) hostname.
+RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME")
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
+
 # ---------------------------------------------------------------------------
 # Applications
 # ---------------------------------------------------------------------------

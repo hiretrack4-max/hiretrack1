@@ -26,12 +26,10 @@ services:
       # Auto-generated strong secret; no need to set it by hand.
       - key: DJANGO_SECRET_KEY
         generateValue: true
-      # Render injects the service's own hostname — add it to ALLOWED_HOSTS.
+      # ALLOWED_HOSTS auto-includes RENDER_EXTERNAL_HOSTNAME in settings.py, so
+      # no explicit host is needed here. Add extra hosts (custom domains) below.
       - key: DJANGO_ALLOWED_HOSTS
-        fromService:
-          type: web
-          name: hiretrack-api
-          property: host
+        value: ""
       # The rest are entered in the dashboard (Neon creds, deployed origins, R2).
       - key: DJANGO_CSRF_TRUSTED_ORIGINS   # e.g. https://hiretrack.vercel.app
         sync: false
