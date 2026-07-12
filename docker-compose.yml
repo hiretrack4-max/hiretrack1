@@ -1,0 +1,25 @@
+# HireTrack local infrastructure.
+# The HR user starts the database with:  docker compose up -d db
+#
+# The Django app itself is run locally (venv), not in Docker, during development.
+services:
+  db:
+    image: postgres:16
+    container_name: hiretrack_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-hiretrack}
+      POSTGRES_USER: ${POSTGRES_USER:-hiretrack}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hiretrack}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - hiretrack_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-hiretrack} -d ${POSTGRES_DB:-hiretrack}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  hiretrack_pgdata:

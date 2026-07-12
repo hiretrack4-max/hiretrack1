@@ -1,0 +1,12 @@
+# Normalize line endings. Shell scripts MUST stay LF or bash on the Linux
+# deploy host (Render) fails with "bad interpreter: /usr/bin/env bash^M".
+* text=auto
+*.sh text eol=lf
+build.sh text eol=lf
+
+# Treat binaries as-is (no EOL conversion).
+*.png binary
+*.jpg binary
+*.woff2 binary
+*.docx binary
+*.ico binary

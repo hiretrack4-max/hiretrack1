@@ -1,0 +1,30 @@
+# ---- Python / Django ----
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+env/
+*.egg-info/
+backend/staticfiles/
+backend/media/
+*.log
+
+# ---- Secrets / env (NEVER commit) ----
+.env
+*.env
+!*.env.example
+
+# ---- Node / Vite ----
+node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/coverage/
+
+# ---- OS / IDE ----
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# ---- Local backups (not versioned) ----
+_backup/

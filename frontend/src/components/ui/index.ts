@@ -1,0 +1,40 @@
+// --- Ink & Bone design-system kit (Phase 1) ---
+export { Button } from './Button';
+export type { ButtonProps } from './Button';
+export { Chip, resolveChip, CHIP_STATUS } from './Chip';
+export type { ChipProps, ChipVariant } from './Chip';
+export { Tag } from './Tag';
+export type { TagProps } from './Tag';
+export { VerifyBadge } from './VerifyBadge';
+export type { VerifyBadgeProps } from './VerifyBadge';
+export { Section, SectionScope } from './Section';
+export type { SectionProps, SectionScopeProps } from './Section';
+export { Adorn } from './Adorn';
+export type { AdornProps } from './Adorn';
+export { Input } from './Input';
+export type { InputProps } from './Input';
+export { Select } from './Select';
+export type { SelectOption, SelectProps } from './Select';
+export { Textarea } from './Textarea';
+export type { TextareaProps } from './Textarea';
+export { MetricTile, MetricRow } from './MetricTile';
+export type { MetricTileProps, MetricDelta } from './MetricTile';
+export { JobCard } from './JobCard';
+export type { JobCardProps } from './JobCard';
+export { CandidateRow, CandidateTableHeader } from './CandidateRow';
+export type { CandidateRowProps } from './CandidateRow';
+export { Drawer } from './Drawer';
+export type { DrawerProps } from './Drawer';
+
+// --- Retained primitives (used by existing pages; inherit Ink & Bone tokens) ---
+export { Card, CardHeader, CardTitle, CardBody } from './Card';
+export { Badge, StatusPill } from './Badge';
+export { Table } from './Table';
+export type { Column } from './Table';
+export { Modal } from './Modal';
+export { Tabs } from './Tabs';
+export type { TabItem } from './Tabs';
+export { Spinner } from './Spinner';
+export { Skeleton } from './Skeleton';
+export { Avatar } from './Avatar';
+export { EmptyState } from './EmptyState';

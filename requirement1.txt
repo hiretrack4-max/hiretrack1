@@ -1,0 +1,270 @@
+
+HR RECRUITMENT PORTAL
+Business Requirement Document (BRD) & User Stories
+Field	Detail
+Document Version	2.0
+Date	July 8, 2026
+Prepared For	HR Talent Acquisition Team
+Document Type	Business Requirement Document (BRD) + User Stories
+Status	Draft — For Review
+User Model	Single-user application — one HR user performs all actions (no multi-role access control in this phase)
+ 
+1. Purpose
+The purpose of this application is to provide a centralized HR Recruitment Portal that allows the HR user to manage Job Descriptions (JDs), upload candidate resumes, automatically extract candidate information, map candidates to job roles, track recruitment progress, and generate recruitment reports.
+The system should eliminate manual data entry, improve recruitment efficiency, and provide real-time hiring status.
+2. Objectives
+The application should enable the HR user to:
+•	Create and manage Job Descriptions.
+•	Create Job Roles/Designations.
+•	Upload candidate resumes.
+•	Automatically extract candidate information using Resume Parsing.
+•	Tag candidates to a specific Job Role.
+•	Review and edit extracted information.
+•	Track interview and hiring stages.
+•	Track Job Opening status.
+•	Download recruitment reports.
+•	Filter reports based on date range.
+3. User Model
+This application is designed as a single-user system. There is one user type — the HR User — who has full access to every function in the portal: creating and managing JDs, uploading and tagging resumes, editing candidate profiles, updating statuses, and generating reports.
+There is no role-based access control, multi-user permission hierarchy, or separate login types (e.g., Recruiter vs. Manager vs. Admin) in this phase. If the portal needs to support multiple HR users or approval hierarchies later, role-based access can be introduced as a future enhancement (see Section 13).
+User	Responsibilities
+HR User	Full access: create/edit/delete/archive JDs; upload and tag resumes; review and edit candidate profiles; update candidate and job status; view dashboard; generate and download reports; use global search.
+ 
+4. Functional Requirements
+Module 1 — Job Description Management
+Features — the HR user should be able to:
+•	Create Job Description
+•	Edit Job Description
+•	Delete Job Description
+•	Archive Job Description
+•	Search Job Description
+Fields:
+•	Job ID (Auto Generated)
+•	Job Role / Designation
+•	Department
+•	Hiring Manager
+•	Job Description
+•	Required Skills
+•	Experience Required
+•	Location
+•	Employment Type
+•	Number of Openings
+•	Salary Range
+•	Job Status — Open / In Progress / Closed
+Module 2 — Resume Upload
+The HR user should be able to upload resumes.
+Supported formats: PDF, DOC, DOCX.
+After upload, the system should:
+•	Store the resume
+•	Parse the resume
+•	Extract candidate details
+Module 3 — Resume Parsing
+The system should automatically extract:
+•	Personal Details — Candidate Name, Email, Mobile Number, Address, Current Location
+•	Experience — Total Experience, Relevant Experience
+•	Skills — Skills, Technologies, Certifications
+•	Employment — Current Company, Current Designation
+•	Education — Highest Qualification
+These details should automatically populate the Candidate Information Form.
+Module 4 — Candidate Mapping
+After uploading the resume, the HR user should be able to:
+•	Select a Job Role
+•	Tag the candidate to that Job Role
+Example: Candidate “John” mapped to “Salesforce Developer.”
+One candidate may be mapped to multiple Job Roles if required.
+Module 5 — Candidate Profile Form
+When the HR user opens the candidate profile, the system should display:
+•	Candidate Information — Name, Address, Contact Number, Email, Current Location
+•	Experience — Total Experience, Relevant Experience
+•	Skills — Skills, Technologies
+•	Employment — Current Company, Current Designation
+•	Recruitment Information — Applied Job Role, Recruiter Name, Resume Upload Date
+Editable Fields — these remain editable because resume parsing cannot reliably determine them:
+•	Current Salary (CTC)
+•	Expected Salary
+•	Notice Period
+•	Last Working Day
+•	Candidate Status (dropdown)
+Candidate Status dropdown values:
+•	Resume Received
+•	Shortlisted
+•	Interview Scheduled
+•	Interview In Progress
+•	Interview Completed
+•	Offer Released
+•	Joined
+•	Rejected
+•	On Hold
+Interview Details (optional):
+•	Interview Date, Interview Time, Interview Round, Interviewer Name, Feedback
+Module 6 — Job Status Management
+Each Job Role should have its own status:
+•	Open
+•	In Progress
+•	Closed
+•	On Hold
+ 
+Module 7 — Dashboard
+The dashboard should display:
+•	Total Jobs
+•	Open Jobs
+•	Closed Jobs
+•	Candidates Uploaded
+•	Interview Scheduled
+•	Offers Released
+•	Joined Candidates
+•	Rejected Candidates
+Charts:
+•	Hiring Pipeline
+•	Candidate Status
+•	Job Status
+•	Department-wise Hiring
+Module 8 — Reports
+The HR user should be able to download reports.
+Supported formats: Excel, CSV, PDF.
+Report Filters:
+•	Today
+•	Yesterday
+•	This Week
+•	Last Week
+•	This Month
+•	Last Month
+•	This Year
+•	Custom Date Range
+Report Columns
+Column
+Candidate Name
+Job Role
+Recruiter
+Resume Upload Date
+Total Experience
+Relevant Experience
+Current Location
+Current Salary
+Expected Salary
+Notice Period
+Last Working Day
+Candidate Status
+Job Status
+Interview Date
+Offer Status
+ 
+Module 9 — Search
+Global Search — the HR user should be able to search by:
+•	Candidate Name
+•	Mobile Number
+•	Email
+•	Skills
+•	Technologies
+•	Job Role
+•	Recruiter
+Module 10 — Notifications
+The system should send notifications when:
+•	Resume Uploaded
+•	Candidate Tagged
+•	Interview Scheduled
+•	Offer Released
+•	Candidate Joined
+5. Non-Functional Requirements
+Performance
+•	Resume parsing within 10 seconds.
+•	Search results within 2 seconds.
+•	Report generation within 30 seconds.
+Security
+•	Secure resume storage.
+•	Audit logs for all data changes.
+•	Authentication for portal login.
+Note: since this is a single-user system, role-based access control and multi-user authorization are not required in this phase; a single authenticated login is sufficient.
+Availability
+99.9% uptime.
+Scalability
+Support 1 million+ resumes and sustained single-user daily usage without performance degradation.
+ 
+6. User Stories
+Epic 1 — Job Management
+User Story 1
+As an HR User, I want to create a Job Description so that I can start hiring for a specific role.
+Acceptance Criteria:
+–	HR can create a new Job.
+–	Job ID is auto-generated.
+–	Job Status defaults to “Open.”
+User Story 2
+As an HR User, I want to edit or close a Job Description so that I can manage hiring requirements.
+Acceptance Criteria:
+–	HR can edit any field.
+–	HR can change Job Status.
+–	Closed jobs should not accept new candidate mappings unless reopened.
+Epic 2 — Resume Upload
+User Story 3
+As an HR User, I want to upload candidate resumes so that the system can automatically create candidate profiles.
+Acceptance Criteria:
+–	Accept PDF/DOC/DOCX.
+–	Resume stored successfully.
+–	Resume parsing starts automatically.
+Epic 3 — Resume Parsing
+User Story 4
+As an HR User, I want the system to automatically extract candidate details from resumes so that manual data entry is minimized.
+Acceptance Criteria:
+–	The system extracts Name, Email, Phone, Address, Skills, Technologies, Experience, and Current Location.
+Epic 4 — Candidate Mapping
+User Story 5
+As an HR User, I want to map a candidate to a Job Role so that hiring can be tracked against the correct requirement.
+Acceptance Criteria:
+–	HR selects Job Role.
+–	Candidate linked successfully.
+–	Mapping visible on Candidate Profile.
+Epic 5 — Candidate Profile
+User Story 6
+As an HR User, I want to review and edit candidate details before submitting the profile.
+Acceptance Criteria:
+–	Resume fields auto-populate.
+–	Editable fields include Current Salary, Expected Salary, Notice Period, and Last Working Day.
+Epic 6 — Candidate Status Tracking
+User Story 7
+As an HR User, I want to update candidate recruitment status so that the hiring pipeline remains accurate.
+Acceptance Criteria:
+–	Available statuses: Resume Received, Shortlisted, Interview Scheduled, Interview In Progress, Interview Completed, Offer Released, Joined, Rejected, On Hold.
+ 
+Epic 7 — Reporting
+User Story 8
+As an HR User, I want to generate recruitment reports using date filters so that I can monitor recruitment progress and share hiring metrics with stakeholders.
+Acceptance Criteria:
+–	Report supports Today, Week, Month, Year, and Custom Date filters.
+–	Download formats: Excel, CSV, PDF.
+Epic 8 — Dashboard
+User Story 9
+As an HR User, I want to view a recruitment dashboard so that I can monitor hiring progress in real time.
+Acceptance Criteria:
+–	Dashboard displays Open Jobs, Closed Jobs, Candidates, Interview Status, Offers, Joined Candidates, and Hiring Trends.
+7. Suggested Database Entities
+Entity
+User
+Job
+Job Description
+Candidate
+Resume
+Candidate Skills
+Candidate Experience
+Candidate Job Mapping
+Interview
+Offer
+Recruitment Status
+Report Configuration
+Audit Log
+ 
+8. Future Enhancements
+•	AI-based resume ranking and scoring.
+•	Skill matching percentage between resume and JD.
+•	Duplicate resume detection.
+•	Automated interview scheduling with Outlook/Google Calendar.
+•	Email notifications to candidates.
+•	Interview feedback forms.
+•	Candidate document management.
+•	Offer letter generation.
+•	Background verification tracking.
+•	Recruiter performance analytics.
+•	Integration with job portals (LinkedIn, Naukri, Indeed).
+•	AI chatbot for candidate screening.
+•	Multi-user support with role-based access control (Recruiter / Manager / Admin), if the team grows beyond a single HR user.
+9. Closing Note
+This document provides a structured foundation for development and can be used directly by business analysts, developers, QA engineers, and stakeholders for requirement gathering and sprint planning. It reflects a single-user HR portal; multi-user role-based access has been deferred to Future Enhancements (Section 8).

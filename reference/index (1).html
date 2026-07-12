@@ -1,0 +1,2075 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hire Track</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Instrument+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+  /* ============ INK & BONE — dark ============ */
+  :root{
+    --ink:#141210;            /* warm near-black */
+    --panel:#1B1815;
+    --panel-2:#232019;
+    --line:#332E27;
+    --line-2:#463F35;
+    --text:#F6F1E7;           /* bone */
+    --muted:#9C9285;
+    --dim:#6C6357;
+    --input-bg:#100E0C;
+
+    --orange:#E8501F;         /* vermilion — the one loud voice */
+    --orange-dim:#A5330E;
+    --orange-wash:rgba(232,80,31,.10);
+
+    --green:#2FA98F;          /* teal, not lime */
+    --red:#D9483B;
+    --amber:#DDA032;
+    --blue:#6E9DD6;
+
+    --paper:transparent;
+    --shadow:0 22px 48px rgba(0,0,0,.55);
+    --scrim:rgba(10,8,6,.74);
+    --grain:.035;
+
+    --mono:"Space Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+    --sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --display:"Instrument Serif",Georgia,"Times New Roman",serif;
+    --r:2px;
+  }
+
+  /* ============ BONE PAPER — light ============ */
+  [data-theme="light"]{
+    --ink:#F6F2E9;            /* paper */
+    --panel:#FFFDF7;
+    --panel-2:#EFE9DC;
+    --line:#DFD7C7;
+    --line-2:#C6BCA8;
+    --text:#17140F;
+    --muted:#5C554A;
+    --dim:#8B8375;
+    --input-bg:#FFFDF7;
+
+    --orange:#C93C0E;
+    --orange-dim:#8F2A08;
+    --orange-wash:rgba(201,60,14,.07);
+
+    --green:#0F7B6C;
+    --red:#B3402F;
+    --amber:#9A6A12;
+    --blue:#2C5FA8;
+
+    --shadow:0 16px 38px rgba(60,45,25,.13);
+    --scrim:rgba(40,32,20,.32);
+    --grain:.05;
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--ink); color:var(--text);
+    font-family:var(--sans); font-size:15px; line-height:1.58;
+    letter-spacing:-.006em;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    transition:background .2s,color .2s;
+  }
+  /* paper grain — the thing that stops it feeling like flat CSS */
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:999;opacity:var(--grain);
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+  ::selection{background:var(--orange);color:#fff}
+  h1,h2,h3{font-family:var(--display);font-weight:400}
+
+  .shell{display:flex;min-height:100vh}
+
+  /* ---------------- rail ---------------- */
+  .rail{
+    width:224px;flex:0 0 224px;background:var(--panel);
+    border-right:1px solid var(--line);
+    display:flex;flex-direction:column;position:sticky;top:0;height:100vh;
+    transition:width .2s cubic-bezier(.2,.8,.2,1),flex-basis .2s cubic-bezier(.2,.8,.2,1);
+  }
+  .brand{padding:20px 16px 18px;border-bottom:1px solid var(--line);position:relative}
+  .brand-mark{display:flex;align-items:center;gap:10px}
+  .brand-dot{width:9px;height:22px;background:var(--orange);border-radius:1px;flex:0 0 auto}
+  .brand-name{font-family:var(--display);font-weight:400;letter-spacing:-.4px;font-size:23px;white-space:nowrap;line-height:1}
+  .brand-sub{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--dim);margin-top:9px;padding-left:19px;white-space:nowrap}
+  .rail-toggle{margin-left:auto;background:none;border:0;cursor:pointer;color:var(--dim);
+    font-size:11px;line-height:1;padding:6px;border-radius:2px;flex:0 0 auto}
+  .rail-toggle:hover{color:var(--orange);background:var(--panel-2)}
+
+  .nav{padding:14px 10px;flex:1}
+  .nav-label{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--dim);padding:10px 8px 10px;white-space:nowrap}
+  .nav-item{display:flex;align-items:center;gap:12px;width:100%;text-align:left;
+    background:none;border:0;cursor:pointer;padding:11px 10px;border-radius:var(--r);
+    color:var(--muted);font-size:14.5px;position:relative;white-space:nowrap;
+    transition:color .12s,background .12s}
+  .nav-item:hover{background:var(--panel-2);color:var(--text)}
+  .nav-item.on{background:var(--panel-2);color:var(--text);font-weight:500}
+  .nav-item.on::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--orange)}
+  .nav-item .ic{width:16px;text-align:center;font-size:13px;flex:0 0 auto;color:var(--dim)}
+  .nav-item.on .ic{color:var(--orange)}
+  .nav-item .ct{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--dim)}
+  .nav-item.on .ct{color:var(--orange)}
+
+  .rail-foot{padding:14px 16px;border-top:1px solid var(--line);
+    font-family:var(--mono);font-size:9.5px;letter-spacing:.04em;color:var(--dim);
+    display:flex;justify-content:space-between;gap:6px;white-space:nowrap;overflow:hidden}
+  .rail-foot b{color:var(--muted);font-weight:400}
+
+  [data-rail="mini"] .rail{width:64px;flex:0 0 64px}
+  [data-rail="mini"] .brand{padding:20px 0 42px;text-align:center}
+  [data-rail="mini"] .brand-mark{justify-content:center}
+  [data-rail="mini"] .brand-name,[data-rail="mini"] .brand-sub,[data-rail="mini"] .nav-label,
+  [data-rail="mini"] .nav-item .lbl,[data-rail="mini"] .nav-item .ct,[data-rail="mini"] .rail-foot .who{display:none}
+  [data-rail="mini"] .rail-toggle{position:absolute;left:50%;transform:translateX(-50%);
+    margin:0;bottom:10px;background:var(--panel-2);border:1px solid var(--line)}
+  [data-rail="mini"] .nav{padding:14px 8px}
+  [data-rail="mini"] .nav-item{justify-content:center;padding:12px 0}
+  [data-rail="mini"] .rail-foot{justify-content:center;padding:14px 4px}
+
+  /* ---------------- top bar ---------------- */
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{height:64px;flex:0 0 64px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:10px;padding:0 24px;background:var(--ink);
+    position:sticky;top:0;z-index:20}
+
+  .search{flex:1;max-width:440px;position:relative}
+  .search input{width:100%;background:transparent;border:0;border-bottom:1px solid var(--line);
+    border-radius:0;padding:9px 10px 9px 26px;outline:none;transition:border-color .14s}
+  .search input:focus{border-bottom-color:var(--orange)}
+  .search input::placeholder{color:var(--dim)}
+  .search .mag{position:absolute;left:2px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:13px;pointer-events:none}
+  .search-drop{position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--panel);
+    border:1px solid var(--line);border-radius:var(--r);max-height:340px;overflow:auto;z-index:40;box-shadow:var(--shadow)}
+  .search-drop .grp{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--dim);padding:11px 14px 6px}
+  .sr{padding:9px 14px;cursor:pointer;display:flex;gap:10px;align-items:baseline}
+  .sr:hover{background:var(--orange-wash);color:var(--orange)}
+  .sr .sr-sub{color:var(--dim);font-size:11px;margin-left:auto;font-family:var(--mono)}
+
+  .page{padding:32px 28px 70px;flex:1;max-width:1500px}
+  .page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;
+    margin-bottom:26px;padding-bottom:18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  h1{font-size:38px;letter-spacing:-.6px;margin:0;line-height:1.02}
+  .page-sub{color:var(--muted);font-size:13.5px;margin-top:8px;max-width:60ch}
+
+  /* ---------------- buttons ---------------- */
+  .btn{background:transparent;border:1px solid var(--line-2);padding:9px 14px;border-radius:var(--r);
+    cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-size:13.5px;
+    transition:border-color .12s,background .12s,transform .06s}
+  .btn:hover{border-color:var(--text)}
+  .btn:active{transform:translateY(1px)}
+  .btn.primary{background:var(--orange);border-color:var(--orange);color:#fff;font-weight:600;letter-spacing:-.01em}
+  .btn.primary:hover{background:var(--orange-dim);border-color:var(--orange-dim)}
+  .btn.ghost{border-color:var(--line)}
+  .btn.ghost:hover{border-color:var(--line-2);background:var(--panel-2)}
+  .btn.danger:hover{border-color:var(--red);color:var(--red);background:transparent}
+  .btn.sm{padding:6px 10px;font-size:12.5px}
+  .btn.icon{padding:8px 10px;line-height:1}
+  .btn:disabled{opacity:.35;cursor:not-allowed}
+  .btn:disabled:hover{border-color:var(--line-2)}
+  :focus-visible{outline:2px solid var(--orange);outline-offset:2px}
+
+  /* ---------------- metrics: a ruled ledger, not boxes ---------------- */
+  .grid{display:grid;gap:16px}
+  .metrics{grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0;margin-bottom:28px;
+    border-top:1px solid var(--line);border-left:1px solid var(--line)}
+  .metric{background:transparent;border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+    padding:16px 18px 18px;position:relative;overflow:hidden}
+  .metric .k{font-family:var(--mono);font-size:8.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
+  .metric .v{font-family:var(--display);font-size:42px;font-weight:400;letter-spacing:-1px;
+    margin-top:10px;font-variant-numeric:tabular-nums;line-height:.95}
+  .metric.hot .v{color:var(--orange)}
+  .metric .bar{position:absolute;left:0;bottom:0;height:2px;background:var(--orange);opacity:.5}
+
+  /* ---------------- cards ---------------- */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r)}
+  .card-head{padding:14px 18px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .card-title{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+  .card-body{padding:18px}
+
+  /* ---------------- pipeline: segmented rule ---------------- */
+  .pipe{display:flex;flex-direction:column;gap:1px}
+  .pipe-row{display:grid;grid-template-columns:158px 1fr 46px;align-items:center;gap:14px;padding:7px 0}
+  .pipe-name{font-size:12.5px;color:var(--muted)}
+  .pipe-track{height:14px;border-radius:1px;overflow:hidden;position:relative;
+    background-image:repeating-linear-gradient(-45deg,var(--line) 0 1px,transparent 1px 6px);
+    border:1px solid var(--line)}
+  .pipe-fill{height:100%;background:var(--orange);transition:width .55s cubic-bezier(.2,.8,.2,1)}
+  .pipe-val{font-family:var(--mono);font-size:12px;font-weight:700;text-align:right;
+    font-variant-numeric:tabular-nums;color:var(--text)}
+
+  .donut-wrap{display:flex;gap:26px;align-items:center;flex-wrap:wrap}
+  .legend{display:flex;flex-direction:column;gap:9px;flex:1;min-width:150px}
+  .lg{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--muted)}
+  .lg .sw{width:8px;height:8px;flex:0 0 auto}
+  .lg .n{margin-left:auto;font-family:var(--mono);color:var(--text);font-variant-numeric:tabular-nums}
+
+  /* ---------------- tables ---------------- */
+  .tbl{width:100%;border-collapse:collapse}
+  .tbl th{text-align:left;font-family:var(--mono);font-size:8.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--dim);font-weight:400;padding:12px 14px;
+    border-bottom:1px solid var(--line-2);white-space:nowrap}
+  .tbl td{padding:14px;border-bottom:1px solid var(--line);vertical-align:middle;font-size:13.5px}
+  .tbl tr:last-child td{border-bottom:0}
+  .tbl tbody tr{transition:background .1s}
+  .tbl tbody tr:hover{background:var(--orange-wash)}
+  .tbl .mono{font-family:var(--mono);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+  .tbl-scroll{overflow-x:auto}
+
+  /* ---------------- stamps ---------------- */
+  .chip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:9px;
+    font-weight:700;letter-spacing:.13em;padding:4px 9px;border-radius:1px;white-space:nowrap;
+    border:1px solid currentColor;text-transform:uppercase}
+  .chip .d{width:4px;height:4px;background:currentColor}
+  .c-open{color:var(--orange);background:var(--orange-wash)}
+  .c-prog{color:var(--amber)}
+  .c-closed{color:var(--dim);border-color:var(--line-2)}
+  .c-hold{color:var(--blue)}
+  .c-good{color:var(--green)}
+  .c-bad{color:var(--red)}
+
+  .tag{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;padding:3px 8px;border-radius:1px;
+    background:transparent;border:1px solid var(--line-2);color:var(--muted);margin:0 5px 5px 0}
+  .tag.hot{color:var(--orange);border-color:var(--orange);background:var(--orange-wash)}
+  .tag .rm{background:none;border:0;cursor:pointer;color:inherit;opacity:.55;padding:0;font-size:11px;line-height:1}
+  .tag .rm:hover{opacity:1}
+
+  /* ---------------- forms ---------------- */
+  .fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+  .field{display:flex;flex-direction:column;gap:7px;min-width:0}
+  .field.wide{grid-column:1/-1}
+  label{font-family:var(--mono);font-size:9px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--dim);display:flex;align-items:center;gap:7px}
+  .inp,select,textarea{background:var(--input-bg);border:1px solid var(--line);border-radius:var(--r);
+    padding:10px 12px;outline:none;width:100%;transition:border-color .12s}
+  .inp:focus,select:focus,textarea:focus{border-color:var(--orange)}
+  textarea{resize:vertical;min-height:88px;line-height:1.6}
+  textarea.paste{min-height:260px;font-family:var(--mono);font-size:12px;line-height:1.7}
+  .inp[readonly]{color:var(--muted);background:var(--panel-2)}
+  .hint{font-size:12px;color:var(--dim);letter-spacing:0;line-height:1.5}
+
+  .adorn{position:relative}
+  .adorn .inp{padding-right:50px}
+  .adorn .suf{position:absolute;right:12px;top:50%;transform:translateY(-50%);
+    font-family:var(--mono);font-size:9.5px;font-weight:700;color:var(--orange);
+    pointer-events:none;letter-spacing:.12em}
+
+  .verify{font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:.14em;color:var(--amber);
+    border:1px solid var(--amber);padding:2px 5px;border-radius:1px;text-transform:uppercase}
+  .manual{font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:.14em;color:var(--orange);
+    border:1px solid var(--orange);padding:2px 5px;border-radius:1px;text-transform:uppercase}
+  .auto{font-family:var(--mono);font-size:8px;font-weight:700;letter-spacing:.14em;color:var(--dim);
+    border:1px solid var(--line-2);padding:2px 5px;border-radius:1px;text-transform:uppercase}
+
+  /* numbered section rules — the dossier tell */
+  .drawer-body{counter-reset:sect}
+  .sect{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+    font-weight:700;color:var(--text);padding:26px 0 14px;border-top:1px solid var(--line);margin-top:26px;
+    display:flex;align-items:center;gap:12px;counter-increment:sect}
+  .sect::before{content:counter(sect,decimal-leading-zero);color:var(--orange);
+    font-weight:700;letter-spacing:.1em;flex:0 0 auto}
+  .sect:first-child{border-top:0;margin-top:0;padding-top:0}
+  .sect::after{content:"";flex:1;height:1px;background:var(--line)}
+
+  /* ---------------- job cards: filing cards ---------------- */
+  .jobs{grid-template-columns:repeat(auto-fill,minmax(310px,1fr))}
+  .job{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);
+    padding:18px 18px 15px 22px;position:relative;overflow:hidden;cursor:pointer;
+    transition:border-color .14s,transform .14s,box-shadow .14s}
+  .job:hover{border-color:var(--line-2);transform:translateY(-2px);box-shadow:var(--shadow)}
+  .job::after{content:"";position:absolute;top:0;right:0;width:0;height:0;
+    border-style:solid;border-width:0 16px 16px 0;
+    border-color:transparent var(--ink) transparent transparent}
+  .job .edge{position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--line)}
+  .job .edge i{position:absolute;left:0;bottom:0;width:4px;background:var(--orange);
+    transition:height .55s cubic-bezier(.2,.8,.2,1)}
+  .job-id{font-family:var(--mono);font-size:9.5px;color:var(--dim);letter-spacing:.14em}
+  .job-role{font-family:var(--display);font-size:24px;font-weight:400;letter-spacing:-.4px;
+    margin:8px 0 8px;line-height:1.1}
+  .job-meta{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--dim);margin-bottom:11px}
+  .job-jd{font-size:12.5px;color:var(--muted);line-height:1.6;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:40px}
+  .job-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;
+    margin-top:15px;padding-top:12px;border-top:1px solid var(--line)}
+  .job-cnt{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--dim)}
+  .job-cnt b{color:var(--orange);font-weight:700}
+
+  /* ---------------- JD sheet ---------------- */
+  .jd-rows{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-top:4px}
+  .jd-row{display:grid;grid-template-columns:170px 1fr;border-bottom:1px solid var(--line)}
+  .jd-row:last-child{border-bottom:0}
+  .jd-row.head{background:var(--orange-wash)}
+  .jd-row.head .jd-v{font-family:var(--display);font-weight:400;font-size:25px;letter-spacing:-.5px;
+    color:var(--orange);line-height:1.15}
+  .jd-k{padding:12px 16px;background:var(--panel-2);font-family:var(--mono);font-size:8.5px;
+    letter-spacing:.2em;text-transform:uppercase;color:var(--dim);border-right:1px solid var(--line);
+    display:flex;align-items:center}
+  .jd-row.head .jd-k{background:transparent;color:var(--orange)}
+  .jd-v{padding:12px 16px;min-width:0}
+  .jd-body{margin-top:22px;font-size:14px;line-height:1.78;white-space:pre-wrap;color:var(--muted);
+    max-width:70ch}
+  .jd-body b{color:var(--text);font-weight:700;display:block;margin-top:20px;
+    font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase}
+
+  /* ---------------- drawer ---------------- */
+  .scrim{position:fixed;inset:0;background:var(--scrim);z-index:50;display:flex;justify-content:flex-end;
+    animation:fade .18s ease;backdrop-filter:blur(2px)}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+  .drawer{width:min(800px,100%);background:var(--ink);height:100%;
+    border-left:4px solid var(--orange);display:flex;flex-direction:column;
+    animation:slide .26s cubic-bezier(.2,.8,.2,1)}
+  @keyframes slide{from{transform:translateX(30px);opacity:.5}to{transform:none;opacity:1}}
+  .drawer-head{padding:22px 26px;border-bottom:1px solid var(--line);
+    display:flex;align-items:flex-start;justify-content:space-between;gap:14px;
+    position:sticky;top:0;background:var(--ink);z-index:2}
+  .drawer-head h1{font-size:32px;letter-spacing:-.5px}
+  .drawer-body{padding:26px;overflow:auto;flex:1}
+  .drawer-foot{padding:16px 26px;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;gap:10px;align-items:center;background:var(--panel)}
+  .x{background:none;border:0;color:var(--dim);cursor:pointer;font-size:20px;line-height:1;padding:4px}
+  .x:hover{color:var(--orange)}
+
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:22px}
+  .tabs button{background:none;border:0;padding:11px 16px;cursor:pointer;color:var(--dim);
+    font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;
+    border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tabs button:hover{color:var(--text)}
+  .tabs button.on{color:var(--orange);border-bottom-color:var(--orange)}
+
+  /* ---------------- dropzone ---------------- */
+  .drop{border:1px dashed var(--line-2);border-radius:var(--r);padding:40px 20px;text-align:center;
+    cursor:pointer;transition:border-color .14s,background .14s;
+    background-image:repeating-linear-gradient(-45deg,var(--panel) 0 1px,transparent 1px 9px)}
+  .drop:hover,.drop.over{border-color:var(--orange);background-color:var(--orange-wash)}
+  .drop .big{font-family:var(--display);font-size:21px;margin-bottom:6px}
+  .drop .sm{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+
+  .parsing{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:13px;padding:16px 0}
+  .spin{width:13px;height:13px;border:2px solid var(--line-2);border-top-color:var(--orange);
+    border-radius:50%;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* ---------------- stints: dotted leaders ---------------- */
+  .stint{display:flex;gap:12px;align-items:baseline;font-size:13px;padding:8px 0;
+    border-bottom:1px dotted var(--line-2)}
+  .stint:last-child{border-bottom:0}
+  .stint .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .stint .r{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--dim);white-space:nowrap}
+  .stint .m{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--orange);
+    white-space:nowrap;min-width:54px;text-align:right;font-variant-numeric:tabular-nums}
+
+  /* ---------------- filters ---------------- */
+  .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:20px}
+  .seg{display:flex;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;flex-wrap:wrap}
+  .seg button{background:transparent;border:0;border-right:1px solid var(--line);padding:8px 13px;
+    cursor:pointer;color:var(--muted);font-size:12.5px;white-space:nowrap;transition:background .1s,color .1s}
+  .seg button:last-child{border-right:0}
+  .seg button:hover{color:var(--text);background:var(--panel-2)}
+  .seg button.on{background:var(--orange);color:#fff;font-weight:600}
+
+  /* ---------------- empty: hatched plate ---------------- */
+  .empty{text-align:center;padding:64px 20px;color:var(--dim);
+    background-image:repeating-linear-gradient(-45deg,var(--panel-2) 0 1px,transparent 1px 10px);
+    border:1px dashed var(--line);border-radius:var(--r)}
+  .empty .e-big{font-family:var(--display);font-size:23px;color:var(--text);margin-bottom:8px}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--panel);
+    border:1px solid var(--line-2);border-left:4px solid var(--orange);padding:13px 18px;
+    border-radius:var(--r);z-index:100;box-shadow:var(--shadow);animation:up .22s ease;font-size:13.5px}
+  @keyframes up{from{transform:translate(-50%,12px);opacity:0}to{transform:translate(-50%,0);opacity:1}}
+
+  .hist{border-left:1px solid var(--line);padding-left:20px;margin-left:5px}
+  .hist-i{position:relative;padding-bottom:16px;font-size:13.5px}
+  .hist-i::before{content:"";position:absolute;left:-24px;top:7px;width:7px;height:7px;background:var(--orange)}
+  .hist-t{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;color:var(--dim);margin-top:2px}
+
+  .resume-row{display:flex;align-items:center;gap:12px;padding:14px 16px;
+    border:1px solid var(--line);border-radius:var(--r);background:var(--panel)}
+  .resume-row .fn{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13.5px}
+  .resume-row .sz{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--dim);white-space:nowrap}
+  .resume-row .ico{color:var(--orange);font-size:16px;flex:0 0 auto}
+
+  @media (max-width:860px){
+    .shell{flex-direction:column}
+    .rail{position:static;width:100%;height:auto;flex:none;flex-direction:row;align-items:center;overflow-x:auto}
+    .brand{border-bottom:0;border-right:1px solid var(--line);padding:12px 14px;flex:0 0 auto}
+    .brand-sub,.rail-toggle{display:none}
+    .nav{display:flex;padding:8px;gap:4px}
+    .nav-label,.rail-foot{display:none}
+    .nav-item.on::before{left:0;right:0;top:auto;bottom:0;width:auto;height:2px}
+    .page{padding:20px 16px 56px}
+    h1{font-size:30px}
+    .metrics{grid-template-columns:repeat(2,1fr)}
+    .metric .v{font-size:34px}
+    .pipe-row{grid-template-columns:112px 1fr 40px}
+    .jd-row{grid-template-columns:1fr}
+    .jd-k{border-right:0;border-bottom:1px solid var(--line)}
+    .drawer{border-left-width:3px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  /* ---- login ---- */
+  #loginScreen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+    background:var(--ink);z-index:200;padding:20px}
+  .login-card{width:min(380px,100%);background:var(--panel);border:1px solid var(--line);
+    border-left:4px solid var(--orange);border-radius:var(--r);padding:34px 30px;box-shadow:var(--shadow)}
+  .login-sub{font-family:var(--mono);font-size:9px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--dim);text-align:center;margin-top:4px}
+  .login-err{color:var(--red);font-size:12.5px;margin-top:12px;min-height:16px;text-align:center}
+</style>
+
+<div class="shell">
+  <aside class="rail">
+    <div class="brand">
+      <div class="brand-mark">
+        <div class="brand-dot"></div>
+        <div class="brand-name">Hire Track</div>
+        <button class="rail-toggle" id="btnRail" title="Collapse sidebar" aria-label="Collapse sidebar">◀</button>
+      </div>
+      <div class="brand-sub">Recruitment · v4.0</div>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="nav-label">Workspace</div>
+      <button class="nav-item on" data-view="dashboard" title="Dashboard"><span class="ic">▤</span><span class="lbl">Dashboard</span></button>
+      <button class="nav-item" data-view="jobs" title="Job Roles"><span class="ic">◈</span><span class="lbl">Job Roles</span><span class="ct" id="ctJobs">0</span></button>
+      <button class="nav-item" data-view="candidates" title="Candidates"><span class="ic">◍</span><span class="lbl">Candidates</span><span class="ct" id="ctCands">0</span></button>
+      <button class="nav-item" data-view="reports" title="Reports"><span class="ic">▦</span><span class="lbl">Reports</span></button>
+    </nav>
+    <div class="rail-foot"><span class="who"><b>Avinash S</b> · HR</span><span id="clock">—</span></div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <div class="search">
+        <span class="mag">⌕</span>
+        <input id="q" placeholder="Search candidates, skills, roles, email, phone…" autocomplete="off">
+        <div id="qdrop"></div>
+      </div>
+      <button class="btn sm icon ghost" id="btnTheme" title="Toggle theme">☾</button>
+      <button class="btn sm ghost" id="btnSignOut" title="Sign out">Sign out</button>
+      <button class="btn sm ghost danger" id="btnReset">Reset</button>
+    </header>
+    <div class="page" id="page"></div>
+  </main>
+</div>
+
+<!-- Supabase client + your project config -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="./config.js"></script>
+<script>
+/* ---- Supabase-backed persistence (replaces browser storage) ---- */
+const sb = window.supabase.createClient(HIRETRACK_CONFIG.url, HIRETRACK_CONFIG.anonKey);
+</script>
+<script>
+/* ============================================================
+   CONSTANTS + STORAGE
+   ============================================================ */
+const HR_USER = "Avinash S";
+
+/* ============================================================
+   SUPABASE PERSISTENCE  (replaces the old browser-storage layer)
+   ============================================================ */
+
+/* small helpers to map between the app's camelCase object and the
+   snake_case columns in Postgres */
+function jobToRow(j){
+  return { id:j.id, role:j.role, jd:j.jd, location:j.location, experience:j.experience,
+    salary:j.salary, openings:String(j.openings||''), status:j.status,
+    created_at:j.createdAt||new Date().toISOString(),
+    closed_at:j.closedAt||null };
+}
+function rowToJob(r){
+  return { id:r.id, role:r.role, jd:r.jd||'', location:r.location||'', experience:r.experience||'',
+    salary:r.salary||'', openings:r.openings||'', status:r.status||'Open',
+    createdAt:r.created_at, closedAt:r.closed_at||'' };
+}
+function candToRow(c){
+  return { id:c.id, name:c.name, email:c.email, phone:c.phone, address:c.address, location:c.location,
+    total_exp:c.totalExp, relevant_exp:c.relevantExp, skills:c.skills, technologies:c.technologies,
+    current_company:c.currentCompany, current_designation:c.currentDesignation, qualification:c.qualification,
+    certifications:c.certifications||[], stints:c.stints||[],
+    current_fixed:String(c.currentFixed||''), current_variable:String(c.currentVariable||''),
+    expected_salary:String(c.expectedSalary||''), notice_period:Number(c.noticePeriod||0),
+    last_working_day:c.lastWorkingDay||'', status:c.status, job_ids:c.jobIds||[],
+    recruiter:c.recruiter||'Avinash S', resume_name:c.resumeName||'', resume_size:c.resumeSize||0,
+    resume_path:c.resumePath||'', interview:c.interview||{}, history:c.history||[], flags:c.flags||[],
+    uploaded_at:c.uploadedAt||new Date().toISOString(),
+    last_status_at:c.lastStatusAt||new Date().toISOString() };
+}
+function rowToCand(r){
+  return { id:r.id, name:r.name||'', email:r.email||'', phone:r.phone||'', address:r.address||'',
+    location:r.location||'', totalExp:r.total_exp||'', relevantExp:r.relevant_exp||'',
+    skills:r.skills||[], technologies:r.technologies||[], currentCompany:r.current_company||'',
+    currentDesignation:r.current_designation||'', qualification:r.qualification||'',
+    certifications:r.certifications||[], stints:r.stints||[],
+    currentFixed:r.current_fixed||'', currentVariable:r.current_variable||'',
+    expectedSalary:r.expected_salary||'', noticePeriod:r.notice_period||0,
+    lastWorkingDay:r.last_working_day||'', status:r.status||'Resume Received',
+    jobIds:r.job_ids||[], recruiter:r.recruiter||'Avinash S', resumeName:r.resume_name||'',
+    resumeSize:r.resume_size||0, resumePath:r.resume_path||'', resumeStored:!!r.resume_path,
+    interview:r.interview||{date:'',time:'',round:'',interviewer:'',feedback:''},
+    history:r.history||[], flags:r.flags||[],
+    uploadedAt:r.uploaded_at, lastStatusAt:r.last_status_at };
+}
+
+/* pull everything for the current user into the in-memory DB */
+async function loadAll(){
+  const [{data:jobs,error:je},{data:cands,error:ce}] = await Promise.all([
+    sb.from('jobs').select('*').order('created_at',{ascending:false}),
+    sb.from('candidates').select('*').order('uploaded_at',{ascending:false})
+  ]);
+  if(je) console.error(je); if(ce) console.error(ce);
+  DB.jobs       = (jobs||[]).map(rowToJob);
+  DB.candidates = (cands||[]).map(rowToCand);
+}
+
+/* upsert helpers used throughout the app */
+async function upsertJob(j){  const {error}=await sb.from('jobs').upsert(jobToRow(j)); if(error) toast('Save failed: '+error.message); }
+async function upsertCand(c){ const {error}=await sb.from('candidates').upsert(candToRow(c)); if(error) toast('Save failed: '+error.message); }
+async function deleteJobRow(id){  await sb.from('jobs').delete().eq('id',id); }
+async function deleteCandRow(id){ await sb.from('candidates').delete().eq('id',id); }
+
+/* server-side id counters so JOB-001 / CAN-001 never collide across devices */
+async function nextId(kind){
+  const {data,error} = await sb.rpc('next_counter',{counter_name:kind});
+  if(error){ console.error(error); return Date.now()%100000; }
+  return data;
+}
+
+/* ---- resume files → Supabase Storage (not base64 in a row) ---- */
+const RESUME_LIMIT = 5 * 1024 * 1024;
+
+async function uploadResume(candId, file){
+  const { data:{ user } } = await sb.auth.getUser();
+  const ext  = (file.name.split('.').pop()||'bin').toLowerCase();
+  const path = `${user.id}/${candId}.${ext}`;
+  const { error } = await sb.storage.from('resumes').upload(path, file, {upsert:true});
+  if(error){ toast('Resume upload failed: '+error.message); return ''; }
+  return path;
+}
+async function deleteResumeFile(path){ if(path) await sb.storage.from('resumes').remove([path]); }
+
+async function openResume(c, forceDownload){
+  if(!c.resumePath){ toast("No stored resume for this candidate."); return; }
+  const { data, error } = await sb.storage.from('resumes').createSignedUrl(c.resumePath, 120, {download:forceDownload});
+  if(error){ toast("Couldn't open resume: "+error.message); return; }
+  window.open(data.signedUrl, '_blank');
+}
+
+const prettySize = b => !b ? "" : b < 1024*1024 ? `${Math.round(b/1024)} KB` : `${(b/1048576).toFixed(1)} MB`;
+
+let DB = { jobs:[], candidates:[], seq:{job:0,cand:0} };
+
+const JOB_STATUS  = ["Open","In Progress","On Hold","Closed"];
+const CAND_STATUS = ["Resume Received","Shortlisted","Interview Scheduled","Interview In Progress","Interview Completed","Offer Released","Joined","Rejected","On Hold"];
+const PIPE_ORDER  = ["Resume Received","Shortlisted","Interview Scheduled","Interview In Progress","Interview Completed","Offer Released","Joined"];
+const STATUS_CLASS = {
+  "Open":"c-open","In Progress":"c-prog","On Hold":"c-hold","Closed":"c-closed",
+  "Resume Received":"c-closed","Shortlisted":"c-open","Interview Scheduled":"c-prog",
+  "Interview In Progress":"c-prog","Interview Completed":"c-hold",
+  "Offer Released":"c-open","Joined":"c-good","Rejected":"c-bad"
+};
+
+async function saveAll(){
+  for(const j of DB.jobs) await upsertJob(j);
+  for(const c of DB.candidates) await upsertCand(c);
+}
+/* save() is called all over the app after a local mutation. In the live build
+   the specific row is upserted right where it changed (see below), so the bare
+   save() becomes a light no-op that just persists nothing extra. */
+const save = () => {};
+const pad    = (n,w=3) => String(n).padStart(w,"0");
+const esc    = s => String(s ?? "").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const nowISO = () => new Date().toISOString();
+
+/* ---- DD/MM/YYYY everywhere ---- */
+function ddmmyyyy(v){
+  if(!v) return "";
+  const d = v instanceof Date ? v : new Date(v);
+  if(isNaN(d)) return "";
+  return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;
+}
+const fmtDate = v => ddmmyyyy(v) || "—";
+const isoDay  = v => v ? new Date(v).toISOString().slice(0,10) : "";
+
+/* ---- LPA salary ---- */
+function normLPA(v){
+  if(v==="" || v==null) return "";
+  let n = parseFloat(String(v).replace(/[^0-9.]/g,""));
+  if(isNaN(n)) return "";
+  if(n >= 100000) n = n/100000;            // 1600000 → 16
+  return Math.round(n*100)/100;
+}
+function lpa(v){ const n = normLPA(v); return n==="" ? "" : `${n} LPA`; }
+
+function chip(s){ return `<span class="chip ${STATUS_CLASS[s]||"c-closed"}"><span class="d"></span>${esc(s)}</span>`; }
+function toast(m){
+  document.querySelectorAll(".toast").forEach(t=>t.remove());
+  const t=document.createElement("div"); t.className="toast"; t.textContent=m;
+  document.body.appendChild(t); setTimeout(()=>t.remove(),2600);
+}
+
+/* ============================================================
+   RESUME PARSING
+   ============================================================ */
+const SKILL_DICT = ["Java","Python","JavaScript","TypeScript","C++","C#",".NET","Go","Rust","Ruby","PHP","Kotlin","Swift","Scala","SQL","PL/SQL",
+"React","Angular","Vue","Next.js","Node.js","Express","Spring","Spring Boot","Hibernate","Django","Flask","FastAPI","Laravel","Rails","Redux",
+"AWS","Azure","GCP","Docker","Kubernetes","Terraform","Jenkins","Git","GitHub","GitLab","CI/CD","Ansible","Linux","GitHub Actions",
+"MySQL","PostgreSQL","MongoDB","Redis","Oracle","Cassandra","Elasticsearch","Snowflake","Kafka","RabbitMQ",
+"Salesforce","Apex","Lightning","SAP","ServiceNow","Workday","Tableau","Power BI","Excel",
+"Machine Learning","Deep Learning","TensorFlow","PyTorch","NLP","LangGraph","RAG","LLM","Pandas","NumPy","Spark","Hadoop","Airflow","dbt","ETL",
+"HTML","CSS","SASS","Tailwind","GraphQL","REST","Microservices","Agile","Scrum","JIRA","Selenium","Cypress","JUnit","TestNG","Jest",
+"Figma","Photoshop","Illustrator","Android","iOS","Flutter","React Native","JWT","S3","EC2"];
+
+const CITY_DICT = ["Bengaluru","Bangalore","Hyderabad","Chennai","Navi Mumbai","Mumbai","Thane","Pune","New Delhi","Delhi","Noida","Gurugram","Gurgaon",
+"Kolkata","Ahmedabad","Jaipur","Kochi","Cochin","Coimbatore","Indore","Chandigarh","Thiruvananthapuram","Trivandrum","Nagpur","Visakhapatnam","Vizag",
+"Lucknow","Bhopal","Surat","Vadodara","Mysuru","Mysore","Belagavi","Belgaum","Hubli","Hubballi","Dharwad","Mangaluru","Mangalore","Udupi","Manipal",
+"Nashik","Aurangabad","Kanpur","Patna","Ranchi","Bhubaneswar","Guwahati","Raipur","Ludhiana","Amritsar","Dehradun","Panaji","Goa",
+"Tiruchirappalli","Trichy","Madurai","Salem","Erode","Tirupati","Vijayawada","Guntur","Warangal","Rajkot","Bhavnagar",
+"Faridabad","Ghaziabad","Meerut","Agra","Varanasi","Prayagraj","Allahabad","Jodhpur","Udaipur","Kota","Shimla","Srinagar","Jammu",
+"Puducherry","Pondicherry","Remote","Hybrid",
+"London","New York","San Francisco","Seattle","Austin","Toronto","Singapore","Dubai","Berlin","Sydney"];
+
+const STATE_RE = /^(karnataka|maharashtra|tamil\s*nadu|kerala|telangana|andhra\s*pradesh|gujarat|rajasthan|punjab|haryana|uttar\s*pradesh|madhya\s*pradesh|bihar|west\s*bengal|odisha|orissa|assam|jharkhand|chhattisgarh|uttarakhand|himachal\s*pradesh|goa|jammu\s*(and|&)\s*kashmir|delhi|ncr|india)$/i;
+
+/* "Belgaum, Karnataka" -> "Belgaum"  ·  "12 MG Road, Indiranagar, Bengaluru 560038" -> "Bengaluru" */
+function deriveLocation(address){
+  if(!address) return "";
+  const hit = cityIn(address);
+  if(hit) return hit;
+  const parts = address.split(",").map(x=>x.trim()).filter(Boolean)
+    .map(x=>x.replace(/\b\d{6}\b/g,"").trim()).filter(Boolean)
+    .filter(x=>!STATE_RE.test(x));
+  const last = parts[parts.length-1] || "";
+  return last.split(/\s+/).length <= 3 ? last : "";
+}
+
+const DEGREES = ["Ph.D","PhD","M.Tech","MTech","M.E","M.S","MS","M.Sc","MSc","MCA","MBA","B.Tech","BTech","B.E","BE","B.Sc","BSc","BCA","B.Com","BA","Diploma"];
+
+const MONTHS = {jan:0,january:0,feb:1,february:1,mar:2,march:2,apr:3,april:3,may:4,jun:5,june:5,
+  jul:6,july:6,aug:7,august:7,sep:8,sept:8,september:8,oct:9,october:9,nov:10,november:10,dec:11,december:11};
+
+async function extractText(file){
+  const n = file.name.toLowerCase();
+  if(n.endsWith(".pdf")){
+    const buf = await file.arrayBuffer();
+    pdfjsLib.GlobalWorkerOptions.workerSrc="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+    const pdf = await pdfjsLib.getDocument({data:buf}).promise;
+    let out="";
+    for(let i=1;i<=pdf.numPages;i++){
+      const tc = await (await pdf.getPage(i)).getTextContent();
+      let lastY=null, line="";
+      tc.items.forEach(it=>{
+        const y = it.transform[5];
+        if(lastY!==null && Math.abs(y-lastY)>3){ out += line.trim()+"\n"; line=""; }
+        line += it.str + " "; lastY = y;
+      });
+      out += line.trim()+"\n";
+    }
+    return out;
+  }
+  if(n.endsWith(".docx")) return (await mammoth.extractRawText({arrayBuffer: await file.arrayBuffer()})).value;
+  if(n.endsWith(".doc"))  return (await file.text()).replace(/[^\x20-\x7E\n]/g," ").replace(/\s{3,}/g,"\n");
+  return await file.text();
+}
+
+/* ---- section slicing ---- */
+const HEAD_EXP   = /^\s*(professional\s+experience|work\s+experience|employment(\s+history)?|experience|career\s+history)\s*:?\s*$/i;
+const HEAD_EDU   = /^\s*(education|academics?|academic\s+background|qualifications?|educational\s+qualifications?)\s*:?\s*$/i;
+const HEAD_OTHER = /^\s*(education|academic|key\s+projects?|projects?|skills?|technical\s+skills|certifications?|achievements?|awards?|summary|objective|profile|publications?|interests?|languages?|references?)\b.{0,30}$/i;
+
+function sliceAt(lines, headRe){
+  const s = lines.findIndex(l=>headRe.test(l));
+  if(s < 0) return [];
+  let e = lines.length;
+  for(let i=s+1;i<lines.length;i++){
+    if(HEAD_OTHER.test(lines[i]) || HEAD_EXP.test(lines[i])){ e=i; break; }
+  }
+  return lines.slice(s+1, e);
+}
+const sliceExperience = lines => sliceAt(lines, HEAD_EXP);
+const sliceEducation  = lines => sliceAt(lines, HEAD_EDU);
+
+/* ---- experience from date ranges ---- */
+const MN = Object.keys(MONTHS).join("|");
+const RANGE_RE = new RegExp(
+  "(" + MN + ")\\.?\\s*'?(\\d{4})" +
+  "\\s*(?:–|—|-|to|until|through)\\s*" +
+  "(present|current|till\\s*date|now|(" + MN + ")\\.?\\s*'?(\\d{4}))", "i");
+const RANGE_NUM_RE = /(\d{1,2})[\/\-](\d{4})\s*(?:–|—|-|to)\s*(present|current|now|(\d{1,2})[\/\-](\d{4}))/i;
+
+const toIdx = (y,m) => y*12 + m;
+
+/* strings that mark something as a company rather than a job title */
+const COMPANY_RE = /\b(pvt\.?|private|ltd\.?|limited|llp|inc\.?|llc|corp\.?|corporation|technologies|technology|technolabs|infotech|systems|solutions|consulting|consultancy|labs|enterprises|industries|manpower|associates|holdings|ventures|group|company|co\.)\b/i;
+
+function nearby(lines, i, dir){
+  for(let k=i+dir; k>=0 && k<lines.length && Math.abs(k-i)<=3; k+=dir){
+    const l = (lines[k]||"").trim();
+    if(l.length > 2 && !/^[•·\-*]/.test(l)) return l;
+  }
+  return "";
+}
+
+/* Given the range line plus the lines above/below it, work out which bit is
+   the job title and which bit is the employer. */
+function splitRoleCompany(candidates){
+  const tokens = [];
+  candidates.filter(Boolean).forEach(s=>{
+    s.split(/\s+[—–|]\s+|\s{2,}|\s+at\s+|,\s*/i)
+     .map(x=>x.trim().replace(/[.,;]$/,""))
+     .filter(x=>x.length>1 && x.length<60)
+     .forEach(x=>tokens.push(x));
+  });
+  const designation = tokens.find(t=>TITLE_RE.test(t) && !COMPANY_RE.test(t)) || "";
+  let company = tokens.find(t=>t!==designation && COMPANY_RE.test(t)) || "";
+  if(!company) company = tokens.find(t=>t!==designation && /^[A-Z]/.test(t) && t.split(/\s+/).length<=5) || "";
+  return {designation, company};
+}
+
+function parseRanges(lines){
+  const out = [];
+  const today = new Date();
+  lines.forEach((line,i)=>{
+    let m = line.match(RANGE_RE), a, b;
+    if(m){
+      a = toIdx(+m[2], MONTHS[m[1].toLowerCase()]);
+      b = /present|current|till|now/i.test(m[3]) ? null : toIdx(+m[5], MONTHS[m[4].toLowerCase()]);
+    } else if((m = line.match(RANGE_NUM_RE))){
+      a = toIdx(+m[2], +m[1]-1);
+      b = /present|current|now/i.test(m[3]) ? null : toIdx(+m[5], +m[4]-1);
+    } else return;
+
+    const end = b === null ? toIdx(today.getFullYear(), today.getMonth()) : b;
+    if(end < a) return;
+
+    const stripped = line.replace(m[0],"").replace(/[—–\-|,]+\s*$/,"").trim();
+    const prev = nearby(lines,i,-1), next = nearby(lines,i,+1);
+    const {designation, company} = splitRoleCompany([stripped, prev, next]);
+
+    const title = (designation && company) ? `${designation} — ${company}`
+                : (stripped.length>2 ? stripped : (designation || company || prev || "Role"));
+
+    out.push({a, b:end, ongoing:b===null, title:title.slice(0,90), designation, company,
+              intern:/\bintern(ship)?\b|\btrainee\b/i.test([stripped,prev,designation].join(" "))});
+  });
+  return out;
+}
+function mergedMonths(rs){
+  if(!rs.length) return 0;
+  const s = rs.map(r=>[r.a, r.b+1]).sort((x,y)=>x[0]-y[0]);
+  let total=0, cs=s[0][0], ce=s[0][1];
+  for(let i=1;i<s.length;i++){
+    if(s[i][0] <= ce) ce = Math.max(ce, s[i][1]);
+    else { total += ce-cs; cs=s[i][0]; ce=s[i][1]; }
+  }
+  return total + (ce-cs);
+}
+const yrs = m => Math.round((m/12)*10)/10;
+
+function extractExperience(text){
+  const lines = text.split("\n").map(l=>l.trim());
+  let sec = sliceExperience(lines);
+  if(!sec.length) sec = lines;
+  const ranges = parseRanges(sec);
+  if(!ranges.length) return {total:"", relevant:"", stints:[]};
+
+  const total = yrs(mergedMonths(ranges));
+  const full  = ranges.filter(r=>!r.intern);
+  const relevant = full.length ? yrs(mergedMonths(full)) : total;
+  const stints = ranges.map(r=>({title:r.title, designation:r.designation, company:r.company,
+                                 months:r.b-r.a+1, intern:r.intern, ongoing:r.ongoing}))
+                       .sort((a,b)=>b.months-a.months);
+  return {total:String(total), relevant:String(relevant), stints, ranges};
+}
+
+/* ---- address: header or footer, never education ---- */
+const EDU_RE   = /universit|college|school|institute|academy|b\.?\s?tech|m\.?\s?tech|bachelor|master|degree|cgpa|gpa|percentage|\bclass\b|board|graduat/i;
+const NOISE_RE = /@|https?:|linkedin|github|portfolio|www\./i;
+const PIN_RE   = /\b\d{6}\b/;
+/* things that make a line an address rather than a sentence that names a city */
+const ADDR_TOKEN = /\b(road|rd|street|st|nagar|sector|colony|apartment|apt|flat|block|layout|lane|cross|avenue|marg|phase|pin|pincode|near|opp|society|tower|towers|floor|extension|enclave|vihar|puram|halli|pura)\b/i;
+/* a line that reads like prose is never an address */
+const ADDR_PROSE = /[.!?]\s*$|\b(based|experience|engineer|developer|analyst|manager|working|passionate|skilled|seeking|summary|objective|profile|years?)\b/i;
+
+function cityIn(s){
+  for(const c of CITY_DICT) if(new RegExp("(^|[^A-Za-z])"+c.replace(/\./g,"\\.")+"([^A-Za-z]|$)","i").test(s)) return c;
+  return "";
+}
+function extractAddress(text){
+  const lines = text.split("\n").map(l=>l.trim()).filter(Boolean);
+
+  const labelled = text.match(/^\s*address\s*[:\-–]\s*(.+)$/im);
+  if(labelled) return {address:labelled[1].trim().slice(0,150), location:cityIn(labelled[1])};
+
+  const scan = arr => {
+    for(const l of arr){
+      if(EDU_RE.test(l) || NOISE_RE.test(l)) continue;
+      if(l.length > 130 || l.length < 3) continue;
+      if(ADDR_PROSE.test(l)) continue;              // it's a sentence, not an address
+      if(l.split(/\s+/).length > 14) continue;
+
+      const city = cityIn(l);
+      const looksLikeAddress =
+        PIN_RE.test(l) ||                            // has a postcode
+        ADDR_TOKEN.test(l) ||                        // road / sector / nagar …
+        (city && l.includes(",")) ||                 // "Indiranagar, Bengaluru"
+        (city && l.split(/\s+/).length <= 4);        // bare "Bengaluru" / "Remote"
+      if(!looksLikeAddress) continue;
+
+      const clean = l.replace(/^[•·|\-–—\s]+/,"")
+                     .replace(/(\+?\d[\d\s\-()]{7,})/g,"")
+                     .replace(/\s*[|•·]\s*/g,", ")
+                     .replace(/,\s*,/g,",").replace(/^,\s*|,\s*$/g,"").trim();
+      if(clean.length >= 3) return clean;
+    }
+    return "";
+  };
+  const head = scan(lines.slice(0,12));
+  const addr = head || scan(lines.slice(-12));
+  return {address:addr, location:cityIn(addr) || cityIn(lines.slice(0,10).join(" "))};
+}
+
+function parseResume(text){
+  const t = text.replace(/\r/g,"");
+  const lines = t.split("\n").map(l=>l.trim()).filter(Boolean);
+  const flat = t.replace(/\s+/g," ");
+  const flags = [];
+
+  const email = (t.match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i)||[""])[0];
+  if(!email) flags.push("email");
+
+  let phone = (t.match(/(?:\+?\d{1,3}[\s-]?)?(?:\(\d{2,4}\)[\s-]?)?\d{5}[\s-]?\d{5}/) ||
+               t.match(/(?:\+?\d{1,3}[\s-]?)?\d{3}[\s-]\d{3}[\s-]\d{4}/) ||
+               t.match(/\b\d{10}\b/) || [""])[0].trim();
+  if(!phone) flags.push("phone");
+
+  let name = "";
+  for(const l of lines.slice(0,8)){
+    if(/@|\d{5}|resume|curriculum|vitae|linkedin|github|http/i.test(l)) continue;
+    const w = l.split(/\s+/);
+    if(w.length>=2 && w.length<=4 && /^[A-Za-z][A-Za-z.'\- ]+$/.test(l)){ name=l.replace(/\s+/g," "); break; }
+  }
+  if(!name && lines[0]) name = lines[0].slice(0,60);
+  if(!name) flags.push("name");
+
+  /* experience — computed from the experience section's date ranges */
+  const exp = extractExperience(t);
+  let totalExp = exp.total, relevantExp = exp.relevant;
+
+  const low = flat.toLowerCase();
+  const em = low.match(/(\d{1,2}(?:\.\d)?)\s*\+?\s*(?:years?|yrs?)\s*(?:of\s*)?(?:total\s*)?(?:it\s*)?experience/);
+  if(em) totalExp = em[1];
+  const rm = low.match(/relevant\s*experience\s*[:\-–]?\s*(\d{1,2}(?:\.\d)?)/) ||
+             low.match(/(\d{1,2}(?:\.\d)?)\s*\+?\s*(?:years?|yrs?)\s*(?:of\s*)?relevant/);
+  if(rm) relevantExp = rm[1];
+
+  if(!totalExp) flags.push("totalExp");
+  if(!relevantExp) flags.push("relevantExp");
+
+  /* location and address are two views of the same thing — keep them in sync */
+  let {address, location} = extractAddress(t);
+  if(!location && address) location = deriveLocation(address);
+  if(!address && location) address = location;
+  if(!address) flags.push("address");
+  if(!location) flags.push("location");
+
+  const found = SKILL_DICT.filter(s=>{
+    const p = s.replace(/[.+#/]/g,m=>"\\"+m);
+    return new RegExp("(^|[^A-Za-z])"+p+"([^A-Za-z]|$)","i").test(flat);
+  });
+  const LANG = new Set(["Java","Python","JavaScript","TypeScript","C++","C#","Go","Rust","Ruby","PHP","Kotlin","Swift","Scala","SQL","PL/SQL","HTML","CSS","Apex"]);
+  const skills = found.filter(s=>LANG.has(s));
+  const technologies = found.filter(s=>!LANG.has(s));
+  if(!found.length) flags.push("skills");
+
+  /* current employer — from the ongoing stint, else the most recent one */
+  let currentCompany="", currentDesignation="";
+  const latest = exp.stints.find(s=>s.ongoing) || exp.stints[0];
+  if(latest){
+    currentDesignation = latest.designation || "";
+    currentCompany     = latest.company || "";
+  }
+  const cm = flat.match(/(?:currently\s+(?:working\s+)?(?:at|with)|current\s+company)\s*[:\-–]?\s*([A-Z][A-Za-z0-9&.,'\- ]{2,40})/);
+  if(cm) currentCompany = cm[1].trim();
+  const dm = flat.match(/(?:current\s+(?:designation|role|title)|designation)\s*[:\-–]?\s*([A-Za-z0-9/&.\- ]{3,45})/i);
+  if(dm) currentDesignation = dm[1].trim();
+  if(!currentCompany) flags.push("currentCompany");
+  if(!currentDesignation) flags.push("currentDesignation");
+
+  /* qualification — prefer the education section; longest degree first;
+     digit-safe boundaries so "300ms" never matches "MS" */
+  const eduLines = sliceEducation(t.split("\n").map(l=>l.trim()));
+  const eduText  = (eduLines.join(" ") || flat).replace(/\s+/g," ");
+  const ordered  = [...DEGREES].sort((a,b)=>b.length-a.length);
+  let qualification="";
+  for(const d of ordered){
+    const p = d.replace(/[.+]/g, m=>"\\"+m);
+    if(new RegExp("(^|[^A-Za-z0-9.])"+p+"([^A-Za-z0-9]|$)","i").test(eduText)){ qualification=d; break; }
+  }
+  if(!qualification) flags.push("qualification");
+
+  const certifications = (t.match(/certifi(?:ed|cation)[^\n]{0,80}/gi)||[]).slice(0,4).map(s=>s.trim());
+
+  return {name,email,phone,address,location,totalExp,relevantExp,skills,technologies,
+          currentCompany,currentDesignation,qualification,certifications,
+          stints:exp.stints, flags};
+}
+
+/* ============================================================
+   JD PARSING — role is row one
+   ============================================================ */
+const JD_LABELS = [
+  ["role",       /^[ \t]*(?:job[ \t]*)?(?:role|title|position|designation)[ \t]*[:\-–][ \t]*(.+)$/im],
+  ["department", /^[ \t]*department[ \t]*[:\-–][ \t]*(.+)$/im],
+  ["location",   /^[ \t]*(?:location|work[ \t]*location|base)[ \t]*[:\-–][ \t]*(.+)$/im],
+  ["employment", /^[ \t]*(?:employment[ \t]*type|job[ \t]*type|type)[ \t]*[:\-–][ \t]*(.+)$/im],
+  ["experience", /^[ \t]*(?:experience(?:[ \t]*required)?|exp)[ \t]*[:\-–][ \t]*(.+)$/im],
+  ["openings",   /^[ \t]*(?:number[ \t]*of[ \t]*)?openings?[ \t]*[:\-–][ \t]*(.+)$/im],
+  ["salary",     /^[ \t]*(?:salary(?:[ \t]*range)?|ctc|compensation)[ \t]*[:\-–][ \t]*(.+)$/im],
+  ["manager",    /^[ \t]*(?:hiring[ \t]*manager|reporting[ \t]*to)[ \t]*[:\-–][ \t]*(.+)$/im],
+];
+/* Lines that are section headers / boilerplate, never a role */
+const JD_BOILER = /^(description|job\s*description|about(\s+us)?|about\s+\w+|overview|job\s*overview|role\s*overview|company\s*overview|summary|apply\s*now|responsibilities|key\s*responsibilities|qualifications?|requirements?|preferred(\s+background)?|benefits?|what\s+we\s+offer|life\s+at\b.*|who\s+we\s+are|the\s+role|equal\s+opportunity.*|location|department|experience|openings?|salary.*|nice\s+to\s+have|bonus)\s*:?\s*$/i;
+
+/* Words that mark a line as a job title */
+const TITLE_RE = /\b(engineer|developer|manager|analyst|architect|designer|scientist|consultant|specialist|administrator|lead|director|officer|executive|associate|accountant|recruiter|technician|programmer|tester|sde|swe|sre|devops|qa|product\s+owner|scrum\s+master|coordinator|supervisor|strategist|writer|editor|intern|trainee|head\s+of|principal|nurse|therapist|counsel|attorney|advocate)\b/i;
+
+/* Sentence-ish lines are prose, not titles */
+const PROSE_RE = /\b(you|we|our|your|the\s+role\s+requires|will\s+be|is\s+a|are\s+a)\b|[.;]\s*$/i;
+
+function cleanRole(s){
+  return s.replace(/\([^)]*\)\s*$/,"")          // drop "(PST Shift)"
+          .replace(/\s*[–—-]\s*(remote|hybrid|onsite|contract|full[- ]?time|part[- ]?time).*$/i,"")
+          .replace(/[.,;:]\s*$/,"")
+          .replace(/\s+/g," ")
+          .trim();
+}
+
+function detectRole(text){
+  const lines = text.split("\n").map(l=>l.trim()).filter(Boolean);
+
+  /* 1. an explicit label wins */
+  const lbl = text.match(JD_LABELS[0][1]);
+  if(lbl) return cleanRole(lbl[1]).slice(0,80);
+
+  /* 2. a standalone line that reads like a job title */
+  for(const l of lines){
+    if(JD_BOILER.test(l)) continue;
+    if(l.length > 70 || l.split(/\s+/).length > 9) continue;
+    if(/^[•·\-*]/.test(l) || l.endsWith(":")) continue;
+    if(PROSE_RE.test(l)) continue;
+    if(TITLE_RE.test(l)) return cleanRole(l).slice(0,80);
+  }
+
+  /* 3. "As a Sr SDE at Skypoint, you will…" */
+  const asA = text.match(/\b[Aa]s\s+[Aa]n?\s+([A-Za-z][\w.\/+\- ]{2,45}?)\s+(?:at|with|for)\s+[A-Z]/);
+  if(asA && TITLE_RE.test(asA[1])) return cleanRole(asA[1]).slice(0,80);
+
+  /* 4. "hiring a Data Engineer" / "looking for a QA Lead" */
+  const hire = text.match(/\b(?:hiring|looking\s+for|seeking|recruiting)\s+an?\s+([A-Za-z][\w.\/+\- ]{2,45}?)(?:\s+(?:with|to|who|for)\b|[.,\n])/i);
+  if(hire && TITLE_RE.test(hire[1])) return cleanRole(hire[1]).slice(0,80);
+
+  /* 5. last resort — a short, non-prose line. Otherwise leave it for HR. */
+  const first = lines.find(l=>!JD_BOILER.test(l) && l.length<=70 && !PROSE_RE.test(l) && !l.endsWith(":"));
+  return first ? cleanRole(first).slice(0,80) : "";
+}
+
+function parseJD(text){
+  /* role is never inferred — HR types it. Only location and experience are read. */
+  const o = {role:"",department:"",location:"",employment:"",experience:"",openings:"",salary:"",manager:""};
+  JD_LABELS.forEach(([k,re])=>{ const m=text.match(re); if(m) o[k]=m[1].trim().replace(/[.,;]$/,"").slice(0,120); });
+  o.role = "";
+  if(!o.experience){
+    const m = text.match(/(\d{1,2})\s*\+?\s*(?:to|-|–)?\s*(\d{1,2})?\s*years?/i);
+    if(m) o.experience = m[2] ? `${m[1]}–${m[2]} years` : `${m[1]}+ years`;
+  }
+  if(!o.location) o.location = cityIn(text);
+  return o;
+}
+function isLabelLine(l){ return JD_LABELS.some(([,re])=>new RegExp("^"+re.source.replace(/^\^|\$$/g,"").replace(/\$$/,"")+"$","i").test(l.trim())); }
+function renderJDBody(jd){
+  const kept = jd.split("\n").filter(l=>{
+    const t = l.trim();
+    if(!t) return true;
+    return !JD_LABELS.some(([,re])=>{
+      const one = new RegExp(re.source, "i");
+      return one.test(t) && t.length < 90;
+    });
+  }).join("\n").trim();
+  return esc(kept).replace(/^([A-Z][A-Za-z \/&]{2,34})\s*:?\s*$/gm, "<b>$1</b>");
+}
+
+/* ============================================================
+   DERIVED
+   ============================================================ */
+const jobById = id => DB.jobs.find(j=>j.id===id);
+const candsForJob = id => DB.candidates.filter(c=>c.jobIds.includes(id));
+const activeJobs = () => DB.jobs.filter(j=>j.status!=="Closed");
+function pipeStage(s){
+  if(s==="Rejected") return {pct:100, dead:true};
+  const i = PIPE_ORDER.indexOf(s);
+  return {pct: i<0 ? 0 : Math.round(((i+1)/PIPE_ORDER.length)*100)};
+}
+function jobProgress(j){
+  const cs = candsForJob(j.id);
+  if(!cs.length) return 0;
+  if(j.status==="Closed") return 100;
+  return Math.max(0, ...cs.map(c=>pipeStage(c.status).dead?0:pipeStage(c.status).pct));
+}
+function totalCTC(c){
+  const f = normLPA(c.currentFixed)||0, v = normLPA(c.currentVariable)||0;
+  return (f||v) ? Math.round((f+v)*100)/100 : "";
+}
+
+/* ============================================================
+   VIEWS
+   ============================================================ */
+let view = "dashboard";
+const page = document.getElementById("page");
+
+function render(){
+  document.getElementById("ctJobs").textContent = DB.jobs.length;
+  document.getElementById("ctCands").textContent = DB.candidates.length;
+  document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("on", b.dataset.view===view));
+  ({dashboard:vDashboard, jobs:vJobs, candidates:vCandidates, reports:vReports})[view]();
+}
+
+function vDashboard(){
+  const jobs=DB.jobs, cands=DB.candidates, cnt=s=>cands.filter(c=>c.status===s).length;
+  const metrics = [["Total Jobs",jobs.length,0],["Open Jobs",jobs.filter(j=>j.status==="Open").length,1],
+    ["Closed Jobs",jobs.filter(j=>j.status==="Closed").length,0],["Candidates",cands.length,0],
+    ["Interviews Scheduled",cnt("Interview Scheduled"),0],["Offers Released",cnt("Offer Released"),1],
+    ["Joined",cnt("Joined"),0],["Rejected",cnt("Rejected"),0]];
+  const pipeMax = Math.max(1,...PIPE_ORDER.map(cnt));
+  const jsColors = {"Open":"var(--orange)","In Progress":"var(--amber)","On Hold":"var(--blue)","Closed":"var(--dim)"};
+  const jobStat = JOB_STATUS.map(s=>[s, jobs.filter(j=>j.status===s).length]);
+
+  page.innerHTML = `
+    <div class="page-head">
+      <div><h1>Dashboard</h1><div class="page-sub">Live hiring position across all job roles.</div></div>
+      <button class="btn primary" data-act="newjob">＋ Add JD</button>
+    </div>
+    <div class="grid metrics">
+      ${metrics.map(([k,v,hot])=>`<div class="metric ${hot?"hot":""}">
+        <div class="k">${k}</div><div class="v">${v}</div>
+        <div class="bar" style="width:${Math.min(100,(v/Math.max(1,cands.length||jobs.length||1))*100)}%"></div></div>`).join("")}
+    </div>
+    <div class="grid" style="grid-template-columns:1.55fr 1fr">
+      <div class="card">
+        <div class="card-head"><span class="card-title">Hiring pipeline</span>
+          <span class="card-title" style="color:var(--dim)">${cands.length} candidates</span></div>
+        <div class="card-body">${cands.length ? `<div class="pipe">
+          ${PIPE_ORDER.map(s=>`<div class="pipe-row"><div class="pipe-name">${s}</div>
+            <div class="pipe-track"><div class="pipe-fill" style="width:${(cnt(s)/pipeMax)*100}%"></div></div>
+            <div class="pipe-val">${cnt(s)}</div></div>`).join("")}
+          <div class="pipe-row" style="margin-top:8px;border-top:1px solid var(--line);padding-top:12px">
+            <div class="pipe-name" style="color:var(--red)">Rejected</div>
+            <div class="pipe-track"><div class="pipe-fill" style="width:${(cnt("Rejected")/pipeMax)*100}%;background:var(--red)"></div></div>
+            <div class="pipe-val">${cnt("Rejected")}</div></div>
+        </div>` : empty("No candidates yet","Add a job role, then upload a resume to start the pipeline.")}</div>
+      </div>
+      <div class="card">
+        <div class="card-head"><span class="card-title">Job status</span></div>
+        <div class="card-body">${jobs.length ? `<div class="donut-wrap">${donut(jobStat.map(([s,n])=>[n,jsColors[s]]))}
+          <div class="legend">${jobStat.map(([s,n])=>`<div class="lg"><span class="sw" style="background:${jsColors[s]}"></span>${s}<span class="n">${n}</span></div>`).join("")}</div>
+        </div>` : empty("No job roles yet","Paste a JD to create your first role.")}</div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <div class="card-head"><span class="card-title">Open roles · pipeline depth</span>
+        <button class="btn sm ghost" data-act="go-jobs">View all</button></div>
+      <div class="card-body">${activeJobs().length ? `<div class="pipe">${activeJobs().slice(0,6).map(j=>`
+        <div class="pipe-row"><div class="pipe-name" title="${esc(j.role)}">${esc(j.role)}</div>
+        <div class="pipe-track"><div class="pipe-fill" style="width:${jobProgress(j)}%"></div></div>
+        <div class="pipe-val">${candsForJob(j.id).length}</div></div>`).join("")}</div>`
+        : empty("No active roles","Every role is closed. Add a JD to begin.")}</div>
+    </div>`;
+}
+function donut(parts){
+  const total = parts.reduce((a,[n])=>a+n,0)||1, R=52, C=2*Math.PI*R;
+  let off=0;
+  const segs = parts.map(([n,col])=>{
+    const len=(n/total)*C;
+    const s=`<circle cx="70" cy="70" r="${R}" fill="none" stroke="${col}" stroke-width="15"
+      stroke-dasharray="${len} ${C-len}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)"/>`;
+    off+=len; return s;
+  }).join("");
+  return `<svg width="140" height="140" viewBox="0 0 140 140">
+    <circle cx="70" cy="70" r="${R}" fill="none" stroke="var(--panel-2)" stroke-width="15"/>${segs}
+    <text x="70" y="68" text-anchor="middle" fill="currentColor" font-size="30" font-family="Instrument Serif, Georgia, serif">${total}</text>
+    <text x="70" y="86" text-anchor="middle" fill="#8B8375" font-size="8" letter-spacing="2.2" font-family="Space Mono, monospace">JOBS</text></svg>`;
+}
+const empty = (a,b) => `<div class="empty"><div class="e-big">${a}</div><div>${b}</div></div>`;
+
+function vJobs(){
+  page.innerHTML = `
+    <div class="page-head">
+      <div><h1>Job Roles</h1><div class="page-sub">Paste a job description — the role becomes row one.</div></div>
+      <button class="btn primary" data-act="newjob">＋ Add JD</button>
+    </div>
+    ${DB.jobs.length ? `<div class="grid jobs">${DB.jobs.map(jobCard).join("")}</div>`
+      : empty("No job roles yet","Click “Add JD”, paste the description, save. The role is picked up for you.")}`;
+}
+function jobCard(j){
+  const n = candsForJob(j.id).length;
+  const meta = [j.location, j.experience].filter(Boolean).join(" · ");
+  return `<div class="job" data-act="openjob" data-id="${j.id}">
+    <div class="edge"><i style="height:${jobProgress(j)}%"></i></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <span class="job-id">${j.id}</span>${chip(j.status)}</div>
+    <div class="job-role">${esc(j.role)}</div>
+    ${meta?`<div class="job-meta">${esc(meta)}</div>`:""}
+    <div class="job-jd">${esc(j.jd).slice(0,180)}</div>
+    <div class="job-foot"><span class="job-cnt"><b>${n}</b> candidate${n===1?"":"s"}</span>
+      <span class="job-cnt">${fmtDate(j.createdAt)}</span></div>
+  </div>`;
+}
+
+function vCandidates(){
+  page.innerHTML = `
+    <div class="page-head">
+      <div><h1>Candidates</h1><div class="page-sub">Upload a resume, tag it to a role, review the parsed profile.</div></div>
+      <button class="btn primary" data-act="upload" ${DB.jobs.length?"":"disabled title='Create a job role first'"}>↑ Upload resume</button>
+    </div>
+    ${DB.candidates.length ? `<div class="card"><div class="tbl-scroll"><table class="tbl">
+      <thead><tr><th>Candidate</th><th>Tagged role(s)</th><th>Total exp</th><th>Relevant</th>
+        <th>Location</th><th>Current CTC</th><th>Notice</th><th>Status</th><th>Uploaded</th><th></th></tr></thead>
+      <tbody>${DB.candidates.map(c=>{
+        const roles = c.jobIds.map(id=>jobById(id)?.role).filter(Boolean);
+        return `<tr>
+          <td><div style="font-weight:500">${esc(c.name||"—")}</div><div class="mono">${esc(c.email||"no email")}</div></td>
+          <td>${roles.length?roles.map(r=>`<span class="tag hot">${esc(r)}</span>`).join(""):`<span class="tag">Untagged</span>`}</td>
+          <td class="mono">${c.totalExp?c.totalExp+" y":"—"}</td>
+          <td class="mono">${c.relevantExp?c.relevantExp+" y":"—"}</td>
+          <td>${esc(c.location||deriveLocation(c.address)||"—")}</td>
+          <td class="mono">${totalCTC(c)===""?"—":totalCTC(c)+" LPA"}</td>
+          <td class="mono">${c.noticePeriod?c.noticePeriod+"d":"0"}</td>
+          <td>${chip(c.status)}</td>
+          <td class="mono">${fmtDate(c.uploadedAt)}</td>
+          <td><button class="btn sm ghost" data-act="opencand" data-id="${c.id}">Open</button></td></tr>`;}).join("")}
+      </tbody></table></div></div>`
+      : empty(DB.jobs.length?"No candidates yet":"Create a job role first","Upload a PDF or DOCX resume to auto-fill a profile.")}`;
+}
+
+/* ---------- Reports ---------- */
+let rf = {tab:"candidates", grain:"month", preset:"this-month", from:"", to:"", job:"", status:""};
+const PRESETS = [["today","Today"],["yesterday","Yesterday"],["this-week","This week"],["last-week","Last week"],
+  ["this-month","This month"],["last-month","Last month"],["this-year","This year"],["custom","Custom"],["all","All time"]];
+
+function rangeFor(p){
+  const n=new Date(), d=new Date(n.getFullYear(),n.getMonth(),n.getDate()), D=864e5, dow=(d.getDay()+6)%7;
+  const mk=(a,b)=>({from:a,to:b});
+  switch(p){
+    case "today": return mk(d,new Date(+d+D-1));
+    case "yesterday": return mk(new Date(+d-D),new Date(+d-1));
+    case "this-week": {const s=new Date(+d-dow*D); return mk(s,new Date(+s+7*D-1));}
+    case "last-week": {const s=new Date(+d-(dow+7)*D); return mk(s,new Date(+s+7*D-1));}
+    case "this-month": return mk(new Date(d.getFullYear(),d.getMonth(),1), new Date(d.getFullYear(),d.getMonth()+1,0,23,59,59));
+    case "last-month": return mk(new Date(d.getFullYear(),d.getMonth()-1,1), new Date(d.getFullYear(),d.getMonth(),0,23,59,59));
+    case "this-year": return mk(new Date(d.getFullYear(),0,1), new Date(d.getFullYear(),11,31,23,59,59));
+    case "custom": return mk(rf.from?new Date(rf.from):new Date(0), rf.to?new Date(rf.to+"T23:59:59"):new Date(8.64e15));
+    default: return mk(new Date(0), new Date(8.64e15));
+  }
+}
+function reportRows(){
+  const {from,to}=rangeFor(rf.preset), rows=[];
+  DB.candidates.forEach(c=>{
+    (c.jobIds.length?c.jobIds:[null]).forEach(jid=>{
+      const j = jid?jobById(jid):null;
+      const ref = new Date(c.lastStatusAt||c.uploadedAt);
+      if(ref<from||ref>to) return;
+      if(rf.job && jid!==rf.job) return;
+      if(rf.status && c.status!==rf.status) return;
+      rows.push({
+        "Candidate Name": c.name||"—",
+        "Job Role": j?j.role:"Untagged",
+        "Recruiter": c.recruiter||HR_USER,
+        "Resume Upload Date": ddmmyyyy(c.uploadedAt),
+        "Total Experience": c.totalExp?`${c.totalExp} yrs`:"",
+        "Relevant Experience": c.relevantExp?`${c.relevantExp} yrs`:"",
+        "Current Location": c.location||deriveLocation(c.address)||"",
+        "Fixed Salary": lpa(c.currentFixed),
+        "Variable Salary": lpa(c.currentVariable),
+        "Current Salary (Total)": totalCTC(c)===""?"":`${totalCTC(c)} LPA`,
+        "Expected Salary": lpa(c.expectedSalary),
+        "Notice Period": c.noticePeriod||0,
+        "Last Working Day": ddmmyyyy(c.lastWorkingDay),
+        "Candidate Status": c.status,
+        "Job Status": j?j.status:"—",
+        "Interview Date": ddmmyyyy(c.interview?.date),
+        "Offer Status": ["Offer Released","Joined"].includes(c.status)?c.status:"—"
+      });
+    });
+  });
+  return rows;
+}
+/* ---------- openings analytics ---------- */
+const openingsOf = j => Math.max(1, parseInt(j.openings,10) || 1);
+
+function periodsFor(grain){
+  const out=[], now=new Date(), D=864e5;
+  if(grain==="week"){
+    const d=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+    const monday=new Date(+d-((d.getDay()+6)%7)*D);
+    for(let i=11;i>=0;i--){
+      const from=new Date(+monday-i*7*D), to=new Date(+from+7*D-1);
+      out.push({label:`W/c ${ddmmyyyy(from)}`, from, to});
+    }
+  } else if(grain==="month"){
+    for(let i=11;i>=0;i--){
+      const from=new Date(now.getFullYear(),now.getMonth()-i,1);
+      const to=new Date(from.getFullYear(),from.getMonth()+1,0,23,59,59);
+      out.push({label:from.toLocaleString(undefined,{month:"short",year:"numeric"}), from, to});
+    }
+  } else {
+    for(let i=4;i>=0;i--){
+      const y=now.getFullYear()-i;
+      out.push({label:String(y), from:new Date(y,0,1), to:new Date(y,11,31,23,59,59)});
+    }
+  }
+  return out;
+}
+
+function openingsRows(grain){
+  const inRange=(iso,f,t)=>{ if(!iso) return false; const d=new Date(iso); return d>=f && d<=t; };
+  return periodsFor(grain).map(p=>{
+    const posted = DB.jobs.filter(j=>inRange(j.createdAt,p.from,p.to));
+    const closed = DB.jobs.filter(j=>inRange(j.closedAt,p.from,p.to));
+    const openAtEnd = DB.jobs.filter(j=>
+      j.createdAt && new Date(j.createdAt)<=p.to && (!j.closedAt || new Date(j.closedAt)>p.to));
+    const joined = DB.candidates.filter(c=>c.status==="Joined" && inRange(c.lastStatusAt,p.from,p.to));
+    return {
+      "Period": p.label,
+      "Roles posted": posted.length,
+      "Openings posted": posted.reduce((a,j)=>a+openingsOf(j),0),
+      "Roles closed": closed.length,
+      "Openings closed": closed.reduce((a,j)=>a+openingsOf(j),0),
+      "Roles still open": openAtEnd.length,
+      "Openings still open": openAtEnd.reduce((a,j)=>a+openingsOf(j),0),
+      "Candidates joined": joined.length
+    };
+  });
+}
+
+function vOpenings(){
+  const rows = openingsRows(rf.grain);
+  const cols = Object.keys(rows[0]);
+  const sum = k => rows.reduce((a,r)=>a+r[k],0);
+  const last = rows[rows.length-1] || {};
+  const grains = [["week","Weekly"],["month","Monthly"],["year","Yearly"]];
+
+  return `
+    <div class="filters">
+      <div class="seg">${grains.map(([k,l])=>`<button data-act="grain" data-k="${k}" class="${rf.grain===k?"on":""}">${l}</button>`).join("")}</div>
+      <span class="hint">Last ${rf.grain==="year"?"5 years":"12 "+rf.grain+"s"} · “still open” is the position at the close of each period.</span>
+    </div>
+
+    <div class="grid metrics">
+      <div class="metric"><div class="k">Openings posted</div><div class="v">${sum("Openings posted")}</div></div>
+      <div class="metric"><div class="k">Openings closed</div><div class="v">${sum("Openings closed")}</div></div>
+      <div class="metric hot"><div class="k">Openings still open</div><div class="v">${last["Openings still open"]||0}</div></div>
+      <div class="metric"><div class="k">Candidates joined</div><div class="v">${sum("Candidates joined")}</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><span class="card-title">${rf.grain}ly openings</span>
+        <span class="card-title" style="color:var(--orange)">${rows.length} periods</span></div>
+      <div class="tbl-scroll"><table class="tbl">
+        <thead><tr>${cols.map(c=>`<th>${c}</th>`).join("")}</tr></thead>
+        <tbody>${rows.map(r=>{
+          const dead = !r["Roles posted"] && !r["Roles closed"] && !r["Roles still open"];
+          return `<tr style="${dead?"opacity:.42":""}">${cols.map(c=>{
+            if(c==="Period") return `<td>${esc(r[c])}</td>`;
+            const hot = c==="Openings still open" && r[c]>0;
+            return `<td class="mono" style="${hot?"color:var(--orange);font-weight:700":""}">${r[c]||"·"}</td>`;
+          }).join("")}</tr>`;}).join("")}
+          <tr style="border-top:1px solid var(--line-2)">
+            <td style="font-weight:600">Total</td>
+            <td class="mono" style="font-weight:700">${sum("Roles posted")}</td>
+            <td class="mono" style="font-weight:700">${sum("Openings posted")}</td>
+            <td class="mono" style="font-weight:700">${sum("Roles closed")}</td>
+            <td class="mono" style="font-weight:700">${sum("Openings closed")}</td>
+            <td class="mono" style="color:var(--dim)">now ${last["Roles still open"]||0}</td>
+            <td class="mono" style="color:var(--orange);font-weight:700">now ${last["Openings still open"]||0}</td>
+            <td class="mono" style="font-weight:700">${sum("Candidates joined")}</td>
+          </tr>
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+function vReports(){
+  const isOpen = rf.tab==="openings";
+
+  const head = `
+    <div class="page-head">
+      <div><h1>Reports</h1><div class="page-sub">${isOpen
+        ? "Openings posted, closed, and still open — by week, month or year."
+        : "Recruitment status by job role and candidate. Dates in DD/MM/YYYY."}</div></div>
+      <div style="display:flex;gap:8px">
+        <button class="btn sm" data-act="exp" data-fmt="csv">CSV</button>
+        <button class="btn sm" data-act="exp" data-fmt="xlsx">Excel</button>
+        <button class="btn sm" data-act="exp" data-fmt="pdf">PDF</button>
+      </div>
+    </div>
+    <div class="tabs" style="margin-bottom:22px">
+      <button class="${isOpen?"":"on"}" data-act="rtab" data-k="candidates">Candidate report</button>
+      <button class="${isOpen?"on":""}" data-act="rtab" data-k="openings">Openings report</button>
+    </div>`;
+
+  if(isOpen){ page.innerHTML = head + vOpenings(); return; }
+
+  const rows = reportRows();
+  const cols = rows.length?Object.keys(rows[0]):["Candidate Name","Job Role","Candidate Status","Job Status"];
+  const {from,to} = rangeFor(rf.preset);
+  const label = rf.preset==="all" ? "All time" : `${ddmmyyyy(from)} – ${ddmmyyyy(to)}`;
+
+  page.innerHTML = head + `
+    <div class="filters">
+      <div class="seg">${PRESETS.map(([k,l])=>`<button data-act="preset" data-k="${k}" class="${rf.preset===k?"on":""}">${l}</button>`).join("")}</div>
+      ${rf.preset==="custom"?`<input type="date" class="inp" style="width:auto" id="rFrom" value="${rf.from}">
+        <span style="color:var(--dim)">→</span>
+        <input type="date" class="inp" style="width:auto" id="rTo" value="${rf.to}">`:""}
+      <select class="inp" style="width:auto" id="rJob"><option value="">All job roles</option>
+        ${DB.jobs.map(j=>`<option value="${j.id}" ${rf.job===j.id?"selected":""}>${esc(j.role)}</option>`).join("")}</select>
+      <select class="inp" style="width:auto" id="rStatus"><option value="">All candidate statuses</option>
+        ${CAND_STATUS.map(s=>`<option ${rf.status===s?"selected":""}>${s}</option>`).join("")}</select>
+    </div>
+    <div class="card">
+      <div class="card-head"><span class="card-title">Preview · ${label}</span>
+        <span class="card-title" style="color:var(--orange)">${rows.length} row${rows.length===1?"":"s"}</span></div>
+      ${rows.length?`<div class="tbl-scroll"><table class="tbl">
+        <thead><tr>${cols.map(c=>`<th>${c}</th>`).join("")}</tr></thead>
+        <tbody>${rows.map(r=>`<tr>${cols.map(c=>{
+          if(c==="Candidate Status"||c==="Job Status") return `<td>${r[c]==="—"?"—":chip(r[c])}</td>`;
+          return `<td class="${/Date|Experience|Salary|Notice|Day/.test(c)?"mono":""}">${esc(r[c]===""?"—":r[c])}</td>`;
+        }).join("")}</tr>`).join("")}</tbody></table></div>`
+        : empty("Nothing in this range","Widen the date filter or clear the role/status filters.")}
+    </div>`;
+
+  const bind=(id,fn)=>{const e=document.getElementById(id); if(e) e.onchange=fn;};
+  bind("rFrom",e=>{rf.from=e.target.value;render();});
+  bind("rTo",  e=>{rf.to=e.target.value;render();});
+  bind("rJob", e=>{rf.job=e.target.value;render();});
+  bind("rStatus",e=>{rf.status=e.target.value;render();});
+}
+
+function download(blob,fn){
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=fn;
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+function exportReport(fmt){
+  const isOpen = rf.tab==="openings";
+  const rows = isOpen ? openingsRows(rf.grain) : reportRows();
+  if(!rows.length){ toast("Nothing to export in this range."); return; }
+  const stamp = ddmmyyyy(new Date()).replace(/\//g,"-");
+  const cols = Object.keys(rows[0]);
+  const slug = isOpen ? `openings-${rf.grain}ly` : "recruitment";
+
+  if(fmt==="csv"){
+    const q=v=>`"${String(v).replace(/"/g,'""')}"`;
+    const csv=[cols.map(q).join(","),...rows.map(r=>cols.map(c=>q(r[c])).join(","))].join("\n");
+    download(new Blob(["\uFEFF"+csv],{type:"text/csv;charset=utf-8"}),`${slug}-report-${stamp}.csv`);
+    toast("CSV downloaded.");
+  } else if(fmt==="xlsx"){
+    const ws=XLSX.utils.json_to_sheet(rows), wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,ws,isOpen?"Openings":"Recruitment");
+    XLSX.writeFile(wb,`${slug}-report-${stamp}.xlsx`);
+    toast("Excel downloaded.");
+  } else {
+    const {from,to}=rangeFor(rf.preset);
+    const label = isOpen ? `Last ${rf.grain==="year"?"5 years":"12 "+rf.grain+"s"}`
+                : rf.preset==="all" ? "All time" : `${ddmmyyyy(from)} – ${ddmmyyyy(to)}`;
+    const w=window.open("","_blank");
+    if(!w){ toast("Allow pop-ups to export PDF."); return; }
+    w.document.write(`<!doctype html><meta charset="utf-8"><title>Recruitment Report</title>
+      <style>body{font-family:Georgia,'Times New Roman',serif;color:#17140F;margin:26px;background:#fff}
+      h1{font-size:24px;margin:0 0 3px;font-weight:400;letter-spacing:-.4px}
+      .sub{color:#5C554A;font-size:10px;margin-bottom:14px;font-family:ui-monospace,monospace;letter-spacing:.06em}
+      .rule{height:4px;background:#C93C0E;width:60px;margin-bottom:16px}
+      table{border-collapse:collapse;width:100%;font-size:9px;font-family:Helvetica,Arial,sans-serif}
+      th{background:#141210;color:#F6F2E9;text-align:left;padding:7px 6px;font-size:7.5px;
+         letter-spacing:.12em;text-transform:uppercase;font-weight:400;font-family:ui-monospace,monospace}
+      td{border-bottom:1px solid #DFD7C7;padding:6px}
+      tr:nth-child(even) td{background:#F6F2E9}@page{size:landscape;margin:10mm}</style>
+      <h1>${isOpen?"Openings Report":"Recruitment Status Report"}</h1>
+      <div class="sub">${label} &nbsp;·&nbsp; ${rows.length} records &nbsp;·&nbsp; ${HR_USER} &nbsp;·&nbsp; generated ${ddmmyyyy(new Date())}</div>
+      <div class="rule"></div>
+      <table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join("")}</tr></thead>
+      <tbody>${rows.map(r=>`<tr>${cols.map(c=>`<td>${String(r[c]===""?"—":r[c])}</td>`).join("")}</tr>`).join("")}</tbody></table>`);
+    w.document.close(); setTimeout(()=>w.print(),350);
+    toast("Opening print dialog — choose “Save as PDF”.");
+  }
+}
+
+/* ============================================================
+   DRAWERS
+   ============================================================ */
+const closeDrawer = () => document.querySelector(".scrim")?.remove();
+function openDrawer(html,onMount){
+  closeDrawer();
+  const s=document.createElement("div"); s.className="scrim";
+  s.innerHTML=`<div class="drawer" role="dialog" aria-modal="true">${html}</div>`;
+  s.addEventListener("click",e=>{ if(e.target===s) closeDrawer(); });
+  document.body.appendChild(s);
+  s.querySelectorAll("[data-close]").forEach(b=>b.onclick=closeDrawer);
+  onMount?.(s);
+}
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeDrawer(); });
+
+/* ---------- JD drawer ---------- */
+function drawerJob(job){
+  const isNew = !job;
+  job = job || {id:"",role:"",jd:"",location:"",experience:"",openings:"",salary:"",status:"Open",createdAt:"",closedAt:""};
+  const cands = isNew?[]:candsForJob(job.id);
+
+  openDrawer(`
+    <div class="drawer-head">
+      <div><div class="job-id">${isNew?"NEW JOB DESCRIPTION":job.id}</div>
+        <h1 style="margin-top:5px">${isNew?"Add JD":esc(job.role)}</h1></div>
+      <button class="x" data-close>✕</button>
+    </div>
+    <div class="drawer-body">
+      <div class="tabs">
+        ${isNew?"":`<button class="on" data-tab="view">Formatted JD</button>`}
+        <button class="${isNew?"on":""}" data-tab="paste">Paste & edit</button>
+      </div>
+
+      <div data-pane="view" ${isNew?"hidden":""}>
+        ${isNew?"":jdView(job)}
+        ${cands.length?`<div class="sect">Tagged candidates · ${cands.length}</div>
+          <table class="tbl"><tbody>${cands.map(c=>`<tr>
+            <td><div style="font-weight:500">${esc(c.name)}</div><div class="mono">${esc(c.email||"—")}</div></td>
+            <td style="text-align:right">${chip(c.status)}</td>
+            <td style="width:70px;text-align:right"><button class="btn sm ghost" data-act="opencand" data-id="${c.id}">Open</button></td>
+          </tr>`).join("")}</tbody></table>`:""}
+      </div>
+
+      <div data-pane="paste" ${isNew?"":"hidden"}>
+        <div class="sect">The job description</div>
+
+        <div class="field wide" style="margin-bottom:16px">
+          <label>Job role <span class="manual">required</span></label>
+          <input class="inp" data-jk="role" id="jdRole" value="${esc(job.role||"")}" placeholder="Type the role, e.g. Software Development Engineer" autocomplete="off">
+        </div>
+
+        <div class="field wide">
+          <label>Description</label>
+          <textarea class="paste" id="jdText" placeholder="Paste the whole job description here.&#10;&#10;Role, location and experience are read out of it automatically.">${esc(job.jd)}</textarea>
+          <div class="hint">Location and experience are pulled from this text every time you edit it — unless you've typed over them yourself. The job role is always yours to enter.</div>
+        </div>
+
+        <div class="sect">Read from the description <span class="auto">auto</span></div>
+        <div class="fgrid">
+          <div class="field"><label>Location</label>
+            <input class="inp" data-jk="location" id="jdLoc" value="${esc(job.location||"")}" placeholder="Not found"></div>
+          <div class="field"><label>Experience</label>
+            <input class="inp" data-jk="experience" id="jdExp" value="${esc(job.experience||"")}" placeholder="Not found"></div>
+        </div>
+
+        <div class="sect">Enter yourself <span class="manual">manual</span></div>
+        <div class="fgrid">
+          <div class="field"><label>Salary range</label>
+            <input class="inp" data-jk="salary" value="${esc(job.salary||"")}" placeholder="e.g. 18–26 LPA"></div>
+          <div class="field"><label>No. of openings</label>
+            <input class="inp" type="number" min="1" data-jk="openings" value="${esc(job.openings||"")}" placeholder="1"></div>
+          <div class="field"><label>Job status</label>
+            <select data-jk="status">${JOB_STATUS.map(s=>`<option ${job.status===s?"selected":""}>${s}</option>`).join("")}</select></div>
+        </div>
+        <div class="hint" style="margin-top:8px">Openings feeds the weekly / monthly / yearly openings report.</div>
+      </div>
+    </div>
+    <div class="drawer-foot">
+      <div>${isNew?"":`<button class="btn ghost danger" data-act="deljob" data-id="${job.id}">Delete</button>`}</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn ghost" data-close>Cancel</button>
+        <button class="btn primary" id="jdSave">${isNew?"Create job role":"Save changes"}</button>
+      </div>
+    </div>`, s=>{
+
+    s.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>{
+      s.querySelectorAll("[data-tab]").forEach(x=>x.classList.toggle("on",x===b));
+      s.querySelectorAll("[data-pane]").forEach(p=>p.hidden = p.dataset.pane!==b.dataset.tab);
+    });
+
+    const ta = s.querySelector("#jdText");
+    const AUTO = ["location","experience"];   // never role, salary or openings
+    const touched = new Set();
+
+    /* if HR types into an auto field, stop overwriting it */
+    AUTO.forEach(k=>{
+      const el = s.querySelector(`[data-jk="${k}"]`);
+      el.addEventListener("input", ()=>{
+        if(el.value.trim()) touched.add(k); else touched.delete(k);
+      });
+    });
+    /* an existing job's saved values count as already decided */
+    if(!isNew) AUTO.forEach(k=>{ if((job[k]||"").trim()) touched.add(k); });
+
+    /* re-derive on every edit of the description */
+    const refill = () => {
+      const p = parseJD(ta.value);
+      AUTO.forEach(k=>{
+        if(touched.has(k)) return;
+        const el = s.querySelector(`[data-jk="${k}"]`);
+        el.value = p[k] || "";
+      });
+    };
+    ta.addEventListener("input", refill);
+    ta.addEventListener("paste", ()=>setTimeout(refill,0));
+    ta.addEventListener("blur",  refill);
+
+    s.querySelector("#jdSave").onclick = async () => {
+      const jd = ta.value.trim();
+      if(!jd){ toast("Paste the job description first."); ta.focus(); return; }
+
+      const get = k => (s.querySelector(`[data-jk="${k}"]`)?.value || "").trim();
+      if(!get("role")){
+        toast("Enter the job role.");
+        const el = s.querySelector('[data-jk="role"]');
+        el.style.borderColor = "var(--red)";
+        el.focus();
+        el.addEventListener("input", ()=>{ el.style.borderColor = ""; }, {once:true});
+        return;
+      }
+
+      const status = get("status");
+      const data = {jd, role:get("role"), location:get("location"), experience:get("experience"),
+                    salary:get("salary"), openings:get("openings"), status};
+
+      if(isNew){
+        const n = await nextId('job');
+        const nj = {id:"JOB-"+pad(n), ...data, createdAt:nowISO(), closedAt: status==="Closed" ? nowISO() : ""};
+        DB.jobs.unshift(nj);
+        await upsertJob(nj);
+        toast("Job role created.");
+      } else {
+        const j = jobById(job.id);
+        const wasClosed = j.status==="Closed";
+        Object.assign(j, data);
+        if(status==="Closed" && !wasClosed) j.closedAt = nowISO();
+        if(status!=="Closed") j.closedAt = "";
+        await upsertJob(j);
+        toast("Job role updated.");
+      }
+      closeDrawer(); render();
+    };
+  });
+}
+function jdView(j){
+  const rows = [["Role", j.role, true],["Job ID", j.id],
+    ["Location", j.location],["Experience", j.experience],
+    ["Salary range", j.salary],["Openings", j.openings],
+    ["Posted on", fmtDate(j.createdAt)],
+    ...(j.closedAt ? [["Closed on", fmtDate(j.closedAt)]] : [])];
+  return `<div class="jd-rows">${rows.filter(([,v])=>v).map(([k,v,head])=>`
+    <div class="jd-row ${head?"head":""}"><div class="jd-k">${k}</div><div class="jd-v">${esc(v)}</div></div>`).join("")}
+    <div class="jd-row"><div class="jd-k">Status</div><div class="jd-v">${chip(j.status)}</div></div>
+  </div>
+  <div class="jd-body">${renderJDBody(j.jd)}</div>`;
+}
+
+/* ---------- Upload drawer ---------- */
+function drawerUpload(){
+  openDrawer(`
+    <div class="drawer-head">
+      <div><div class="job-id">RESUME</div><h1 style="margin-top:5px">Upload resume</h1></div>
+      <button class="x" data-close>✕</button></div>
+    <div class="drawer-body">
+      <div class="sect">Choose the file</div>
+      <div class="drop" id="drop"><div class="big">Drop a resume here, or click to browse</div>
+        <div class="sm">PDF · DOC · DOCX — up to 5 MB</div></div>
+      <input type="file" id="file" accept=".pdf,.doc,.docx,.txt" hidden>
+      <div id="status"></div>
+      <div class="sect">Tag to a job role</div>
+      <div class="field"><label>Job role / designation</label>
+        <select id="tagJob"><option value="">Select a role…</option>
+          ${activeJobs().map(j=>`<option value="${j.id}">${esc(j.role)} · ${j.id}</option>`).join("")}</select>
+        <div class="hint">Tag once here — the profile won't ask again. Closed roles can't take new candidates.</div>
+      </div>
+    </div>
+    <div class="drawer-foot">
+      <span class="hint">Salary, notice period and last working day are never read from a resume.</span>
+      <button class="btn primary" id="go" disabled>Parse & open profile</button>
+    </div>`, s=>{
+    const drop=s.querySelector("#drop"), input=s.querySelector("#file"),
+          stat=s.querySelector("#status"), go=s.querySelector("#go"), sel=s.querySelector("#tagJob");
+    let file=null, parsed=null;
+    const check = () => go.disabled = !(parsed && sel.value);
+    sel.onchange = check;
+    drop.onclick = () => input.click();
+    ["dragover","dragenter"].forEach(e=>drop.addEventListener(e,x=>{x.preventDefault();drop.classList.add("over")}));
+    ["dragleave","drop"].forEach(e=>drop.addEventListener(e,x=>{x.preventDefault();drop.classList.remove("over")}));
+    drop.addEventListener("drop",e=>e.dataTransfer.files[0]&&handle(e.dataTransfer.files[0]));
+    input.onchange = () => input.files[0] && handle(input.files[0]);
+
+    async function handle(f){
+      if(!/\.(pdf|docx?|txt)$/i.test(f.name)){ toast("Only PDF, DOC, DOCX are accepted."); return; }
+      if(f.size > 5*1024*1024){ toast("File is over 5 MB."); return; }
+      file=f; parsed=null; check();
+      stat.innerHTML = `<div class="parsing"><span class="spin"></span>Parsing <b style="margin:0 4px">${esc(f.name)}</b>…</div>`;
+      try{
+        const text = await extractText(f);
+        if(!text.trim()) throw new Error("empty");
+        parsed = parseResume(text);
+        const dup = DB.candidates.find(c=>(parsed.email&&c.email===parsed.email)||(parsed.phone&&c.phone===parsed.phone));
+        const cell = (k,v)=>`<div><label>${k}</label><div style="margin-top:3px">${v?esc(v):`<span class="verify">not found</span>`}</div></div>`;
+        stat.innerHTML = `<div style="padding:12px 0">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap">
+            <span class="chip c-good"><span class="d"></span>Parsed</span>
+            ${f.size <= RESUME_LIMIT ? `<span class="chip c-open"><span class="d"></span>Will be stored</span>`
+                      : `<span class="chip c-hold"><span class="d"></span>Too large to store</span>`}
+            <span class="mono" style="color:var(--dim);font-size:12px">${esc(f.name)} · ${prettySize(f.size)}</span></div>
+          <div class="fgrid" style="gap:10px 14px">
+            ${cell("Name",parsed.name)}${cell("Email",parsed.email)}${cell("Phone",parsed.phone)}
+            ${cell("Current location",parsed.location)}
+            ${cell("Total exp",parsed.totalExp?parsed.totalExp+" yrs":"")}
+            ${cell("Relevant exp",parsed.relevantExp?parsed.relevantExp+" yrs":"")}
+            ${cell("Current company",parsed.currentCompany)}
+            ${cell("Current designation",parsed.currentDesignation)}
+          </div>
+          <div style="margin-top:12px">${cell("Address",parsed.address)}</div>
+          ${parsed.stints.length?`<div style="margin-top:14px">
+            <label style="margin-bottom:6px">Experience section · computed from date ranges</label>
+            ${parsed.stints.map(st=>`<div class="stint">
+              <span class="t">${esc(st.designation||st.title)}${st.company?` <span style="color:var(--dim)">· ${esc(st.company)}</span>`:""}${st.intern?` <span class="auto">intern</span>`:""}</span>
+              <span class="r">${st.ongoing?"ongoing":""}</span>
+              <span class="m">${Math.round(st.months/12*10)/10} y</span></div>`).join("")}
+          </div>`:""}
+          <div style="margin-top:14px">${[...parsed.skills,...parsed.technologies].slice(0,16).map(x=>`<span class="tag hot">${esc(x)}</span>`).join("")||`<span class="verify">no skills matched</span>`}</div>
+          ${dup?`<div style="margin-top:14px;padding:10px 12px;border:1px solid var(--amber);border-radius:4px;font-size:12.5px">
+            <b style="color:var(--amber)">Existing candidate found</b> — ${esc(dup.name)} is already in the system.
+            Saving adds this role to their profile instead of creating a duplicate.</div>`:""}
+        </div>`;
+        check();
+      }catch(err){
+        parsed = {name:"",email:"",phone:"",address:"",location:"",totalExp:"",relevantExp:"",skills:[],technologies:[],
+                  currentCompany:"",currentDesignation:"",qualification:"",certifications:[],stints:[],flags:["all"]};
+        stat.innerHTML = `<div style="padding:12px 0;font-size:13px;color:var(--amber)">
+          Couldn't read text from this file — it may be a scanned image. Continue and fill the profile in manually.</div>`;
+        check();
+      }
+    }
+
+    go.onclick = async () => {
+      const jid = sel.value;
+      go.disabled = true; go.textContent = "Saving…";
+
+      const dup = DB.candidates.find(c=>(parsed.email&&c.email===parsed.email)||(parsed.phone&&c.phone===parsed.phone));
+      if(dup){
+        if(!dup.jobIds.includes(jid)){ dup.jobIds.push(jid); dup.history.push({at:nowISO(),what:`Tagged to ${jobById(jid).role}`}); }
+        dup.resumeName = file.name; dup.resumeSize = file.size;
+        if(file.size <= RESUME_LIMIT){ dup.resumePath = await uploadResume(dup.id, file); dup.resumeStored = !!dup.resumePath; }
+        await upsertCand(dup);
+        closeDrawer(); render(); drawerCandidate(dup.id); toast("Role added to existing candidate."); return;
+      }
+
+      const n = await nextId('cand');
+      const c = {
+        id:"CAN-"+pad(n),
+        name:parsed.name,email:parsed.email,phone:parsed.phone,address:parsed.address,location:parsed.location,
+        totalExp:parsed.totalExp,relevantExp:parsed.relevantExp,skills:parsed.skills,technologies:parsed.technologies,
+        currentCompany:parsed.currentCompany,currentDesignation:parsed.currentDesignation,
+        qualification:parsed.qualification,certifications:parsed.certifications,stints:parsed.stints,
+        currentFixed:"",currentVariable:"",expectedSalary:"",noticePeriod:0,lastWorkingDay:"",
+        status:"Resume Received", jobIds:jid?[jid]:[], recruiter:HR_USER,
+        resumeName:file?file.name:"—", resumeSize:file?file.size:0, resumeStored:false, resumePath:"",
+        uploadedAt:nowISO(), lastStatusAt:nowISO(), flags:parsed.flags,
+        interview:{date:"",time:"",round:"",interviewer:"",feedback:""},
+        history:[{at:nowISO(),what:"Resume received"}]
+      };
+      if(file && file.size <= RESUME_LIMIT){ c.resumePath = await uploadResume(c.id, file); c.resumeStored = !!c.resumePath; }
+
+      DB.candidates.unshift(c);
+      await upsertCand(c);
+      closeDrawer(); render(); drawerCandidate(c.id);
+      toast(c.resumeStored ? "Candidate created — resume stored." : "Candidate created — review the profile.");
+    };
+  });
+}
+
+/* ---------- Candidate drawer ---------- */
+function drawerCandidate(id){
+  const c = DB.candidates.find(x=>x.id===id); if(!c) return;
+  const f = k => (c.flags?.includes(k)||c.flags?.includes("all")) ? `<span class="verify">verify</span>` : "";
+  const roles = c.jobIds.map(j=>jobById(j)).filter(Boolean);
+  const st = pipeStage(c.status);
+  const addable = activeJobs().filter(j=>!c.jobIds.includes(j.id));
+
+  openDrawer(`
+    <div class="drawer-head">
+      <div>
+        <div class="job-id">${c.id} · received ${fmtDate(c.uploadedAt)}</div>
+        <h1 style="margin-top:5px">${esc(c.name||"Unnamed candidate")}</h1>
+        <div style="margin-top:9px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+          ${chip(c.status)}
+          ${roles.map(r=>`<span class="tag hot">${esc(r.role)}
+            <button class="rm" data-untag="${r.id}" title="Remove role">✕</button></span>`).join("")}
+          ${addable.length?`<select id="addRole" class="inp" style="width:auto;padding:3px 6px;font-size:11.5px">
+            <option value="">＋ Add role…</option>
+            ${addable.map(j=>`<option value="${j.id}">${esc(j.role)}</option>`).join("")}</select>`:""}
+        </div>
+      </div>
+      <button class="x" data-close>✕</button>
+    </div>
+
+    <div style="padding:0 22px"><div class="pipe-track" style="height:4px;border:0">
+      <div class="pipe-fill" style="width:${st.pct}%;${st.dead?"background:var(--red)":""}"></div></div></div>
+
+    <div class="drawer-body">
+      <div class="sect">Candidate information</div>
+      <div class="fgrid">
+        ${inp("name","Candidate name",c.name,f("name"))}
+        ${inp("email","Email",c.email,f("email"))}
+        ${inp("phone","Contact number",c.phone,f("phone"))}
+      </div>
+      <div class="fgrid" style="margin-top:14px">
+        <div class="field wide"><label>Location / Address ${f("address")}
+          <span class="hint" style="text-transform:none;letter-spacing:0">— from the resume header or footer</span></label>
+          <textarea data-k="address" id="cAddr" style="min-height:56px">${esc(c.address)}</textarea></div>
+        <div class="field wide"><label>Current location <span class="auto">from address</span></label>
+          <div style="display:flex;gap:8px">
+            <input class="inp" data-k="location" id="cLoc" value="${esc(c.location||deriveLocation(c.address))}" placeholder="e.g. Belgaum">
+            <button class="btn sm ghost" id="cLocFrom" type="button" title="Re-read from the address" style="flex:0 0 auto;white-space:nowrap">↻ From address</button>
+          </div>
+          <div class="hint">Pulled from the address automatically. Different city? Type over it.</div>
+        </div>
+      </div>
+
+      <div class="sect">Experience & skills</div>
+      <div class="fgrid">
+        <div class="field"><label>Total experience (yrs) <span class="auto">from date ranges</span></label>
+          <input class="inp" type="number" step="0.1" data-k="totalExp" value="${esc(c.totalExp)}"></div>
+        <div class="field"><label>Relevant experience (yrs) <span class="auto">excl. internships</span></label>
+          <input class="inp" type="number" step="0.1" data-k="relevantExp" value="${esc(c.relevantExp)}"></div>
+        ${inp("currentCompany","Current company",c.currentCompany,f("currentCompany"))}
+        ${inp("currentDesignation","Current designation",c.currentDesignation,f("currentDesignation"))}
+        ${inp("qualification","Highest qualification",c.qualification,f("qualification"))}
+        <div class="field wide"><label>Skills ${f("skills")}</label>
+          <input class="inp" data-k="skills" value="${esc(c.skills.join(", "))}" placeholder="Comma separated"></div>
+        <div class="field wide"><label>Technologies</label>
+          <input class="inp" data-k="technologies" value="${esc(c.technologies.join(", "))}" placeholder="Comma separated"></div>
+      </div>
+      ${c.stints?.length?`<div style="margin-top:14px">
+        <label style="margin-bottom:6px">Employment history detected</label>
+        ${c.stints.map(s=>`<div class="stint"><span class="t">${esc(s.designation||s.title)}${s.company?` <span style="color:var(--dim)">· ${esc(s.company)}</span>`:""}${s.intern?` <span class="auto">intern</span>`:""}</span>
+          <span class="m">${Math.round(s.months/12*10)/10} y</span></div>`).join("")}</div>`:""}
+
+      <div class="sect">Current salary <span class="manual">manual</span></div>
+      <div class="fgrid">
+        <div class="field"><label>Fixed</label>
+          <div class="adorn"><input class="inp" type="number" step="0.01" data-k="currentFixed" id="sFix" value="${esc(c.currentFixed)}" placeholder="16"><span class="suf">LPA</span></div></div>
+        <div class="field"><label>Variable</label>
+          <div class="adorn"><input class="inp" type="number" step="0.01" data-k="currentVariable" id="sVar" value="${esc(c.currentVariable)}" placeholder="2.5"><span class="suf">LPA</span></div></div>
+        <div class="field"><label>Total <span class="auto">auto</span></label>
+          <div class="adorn"><input class="inp" id="sTot" value="${totalCTC(c)}" readonly><span class="suf">LPA</span></div></div>
+      </div>
+      <div class="hint">Type <b>16</b> → 16 LPA · <b>16.2</b> → 16.2 LPA · paste <b>1600000</b> and it converts to 16 LPA.</div>
+
+      <div class="sect">Expected salary & availability <span class="manual">manual</span></div>
+      <div class="fgrid">
+        <div class="field"><label>Expected salary</label>
+          <div class="adorn"><input class="inp" type="number" step="0.01" data-k="expectedSalary" id="sExp" value="${esc(c.expectedSalary)}" placeholder="22"><span class="suf">LPA</span></div>
+          <div class="hint" id="hikeHint"></div></div>
+        <div class="field"><label>Notice period (days)</label>
+          <input class="inp" type="number" min="0" data-k="noticePeriod" value="${c.noticePeriod||0}"></div>
+        <div class="field"><label>Last working day</label>
+          <input class="inp" type="date" data-k="lastWorkingDay" value="${esc(c.lastWorkingDay)}">
+          <div class="hint">Reported as DD/MM/YYYY.</div></div>
+      </div>
+
+      <div class="sect">Recruitment</div>
+      <div class="fgrid">
+        <div class="field"><label>Candidate status</label>
+          <select data-k="status">${CAND_STATUS.map(s=>`<option ${c.status===s?"selected":""}>${s}</option>`).join("")}</select></div>
+        ${inp("recruiter","HR name",c.recruiter||HR_USER)}
+      </div>
+
+      <div class="sect">Resume file</div>
+      <div class="resume-row">
+        <span class="ico">▤</span>
+        <span class="fn">${esc(c.resumeName||"No file")}</span>
+        <span class="sz">${prettySize(c.resumeSize)}</span>
+        ${c.resumeStored
+          ? `<button class="btn sm ghost" id="rOpen">Open</button>
+             <button class="btn sm ghost" id="rDown">Download</button>`
+          : `<span class="verify">not stored</span>`}
+      </div>
+      ${c.resumeStored ? "" : `<div class="hint" style="margin-top:7px">The original file wasn't kept — it was over 5 MB, or predates storage. Re-upload to keep a copy.</div>`}
+
+      <div class="sect">Interview details <span class="hint" style="text-transform:none;letter-spacing:0">optional</span></div>
+      <div class="fgrid">
+        <div class="field"><label>Interview date</label><input class="inp" type="date" data-k="iv.date" value="${esc(c.interview.date)}"></div>
+        <div class="field"><label>Interview time</label><input class="inp" type="time" data-k="iv.time" value="${esc(c.interview.time)}"></div>
+        <div class="field"><label>Round</label><input class="inp" data-k="iv.round" value="${esc(c.interview.round)}" placeholder="e.g. Technical 1"></div>
+        <div class="field"><label>Interviewer</label><input class="inp" data-k="iv.interviewer" value="${esc(c.interview.interviewer)}"></div>
+        <div class="field wide"><label>Feedback</label><textarea data-k="iv.feedback">${esc(c.interview.feedback)}</textarea></div>
+      </div>
+
+      <div class="sect">History</div>
+      <div class="hist">${[...c.history].reverse().map(h=>`<div class="hist-i">
+        <div>${esc(h.what)}</div><div class="hist-t">${ddmmyyyy(h.at)} · ${new Date(h.at).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</div></div>`).join("")}</div>
+    </div>
+
+    <div class="drawer-foot">
+      <button class="btn ghost danger" data-act="delcand" data-id="${c.id}">Delete candidate</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn ghost" data-close>Cancel</button>
+        <button class="btn primary" id="cSave">Save profile</button>
+      </div>
+    </div>`, s=>{
+
+    const fix=s.querySelector("#sFix"), vr=s.querySelector("#sVar"), tot=s.querySelector("#sTot"),
+          exp=s.querySelector("#sExp"), hike=s.querySelector("#hikeHint");
+    const recalc = () => {
+      const f=normLPA(fix.value)||0, v=normLPA(vr.value)||0;
+      const t=(f||v)?Math.round((f+v)*100)/100:"";
+      tot.value = t;
+      const e = normLPA(exp.value);
+      hike.textContent = (t && e) ? `${Math.round(((e-t)/t)*100)}% hike on ${t} LPA total` : "";
+    };
+    const normalise = el => { const n=normLPA(el.value); if(n!=="" && String(n)!==el.value) el.value=n; recalc(); };
+    [fix,vr,exp].forEach(el=>{ el.addEventListener("input",recalc); el.addEventListener("blur",()=>normalise(el)); });
+    recalc();
+
+    const rOpen = s.querySelector("#rOpen"), rDown = s.querySelector("#rDown");
+    if(rOpen) rOpen.onclick = () => openResume(c, false);
+    if(rDown) rDown.onclick = () => openResume(c, true);
+
+    /* location follows the address unless HR has typed something */
+    const addrEl = s.querySelector("#cAddr"), locEl = s.querySelector("#cLoc"),
+          locBtn = s.querySelector("#cLocFrom");
+    const syncLoc = () => { if(!locEl.value.trim()) locEl.value = deriveLocation(addrEl.value.trim()); };
+    addrEl.addEventListener("blur", syncLoc);
+    addrEl.addEventListener("input", syncLoc);
+    locBtn.onclick = () => {
+      const d = deriveLocation(addrEl.value.trim());
+      if(d){ locEl.value = d; toast(`Location set to ${d}.`); }
+      else toast("Couldn't read a city from that address.");
+    };
+    syncLoc();
+
+    s.querySelectorAll("[data-untag]").forEach(b=>b.onclick=async e=>{
+      e.stopPropagation();
+      const jid=b.dataset.untag;
+      c.jobIds = c.jobIds.filter(x=>x!==jid);
+      c.history.push({at:nowISO(),what:`Untagged from ${jobById(jid)?.role||jid}`});
+      upsertCand(c); drawerCandidate(c.id); render();
+    });
+    const addSel = s.querySelector("#addRole");
+    if(addSel) addSel.onchange = async () => {
+      if(!addSel.value) return;
+      c.jobIds.push(addSel.value);
+      c.history.push({at:nowISO(),what:`Tagged to ${jobById(addSel.value).role}`});
+      upsertCand(c); drawerCandidate(c.id); render(); toast("Role added.");
+    };
+
+    s.querySelector("#cSave").onclick = async () => {
+      const g = k => s.querySelector(`[data-k="${k}"]`);
+      const prev = c.status;
+      ["name","email","phone","address","location","totalExp","relevantExp",
+       "currentCompany","currentDesignation","qualification","recruiter","lastWorkingDay"]
+        .forEach(k=>{ if(g(k)) c[k]=g(k).value.trim(); });
+
+      if(!c.location && c.address) c.location = deriveLocation(c.address);
+
+      c.currentFixed    = normLPA(g("currentFixed").value);
+      c.currentVariable = normLPA(g("currentVariable").value);
+      c.expectedSalary  = normLPA(g("expectedSalary").value);
+      c.noticePeriod    = Number(g("noticePeriod").value||0);
+      c.skills        = g("skills").value.split(",").map(x=>x.trim()).filter(Boolean);
+      c.technologies  = g("technologies").value.split(",").map(x=>x.trim()).filter(Boolean);
+      c.status        = g("status").value;
+      ["date","time","round","interviewer","feedback"].forEach(k=>c.interview[k]=g("iv."+k).value.trim());
+
+      const jobsToSave = [];
+      if(c.status!==prev){
+        c.lastStatusAt = nowISO();
+        c.history.push({at:nowISO(), what:`Status → ${c.status}`});
+        c.jobIds.forEach(jid=>{
+          const j=jobById(jid); if(!j) return;
+          if(c.status==="Joined"){ if(j.status!=="Closed") j.closedAt = nowISO(); j.status="Closed"; jobsToSave.push(j); }
+          else if(j.status==="Open" && PIPE_ORDER.indexOf(c.status)>=1){ j.status="In Progress"; jobsToSave.push(j); }
+        });
+      }
+      for(const j of jobsToSave) await upsertJob(j);
+      c.flags = [];
+      await upsertCand(c); closeDrawer(); render(); toast("Profile saved.");
+    };
+  });
+}
+const inp = (k,label,val,flag="") =>
+  `<div class="field"><label>${label} ${flag}</label><input class="inp" data-k="${k}" value="${esc(val)}"></div>`;
+
+/* ============================================================
+   SEARCH · EVENTS · THEME
+   ============================================================ */
+const q=document.getElementById("q"), qdrop=document.getElementById("qdrop");
+q.addEventListener("input",()=>{
+  const v=q.value.trim().toLowerCase();
+  if(!v){ qdrop.innerHTML=""; return; }
+  const cs=DB.candidates.filter(c=>[c.name,c.email,c.phone,c.location,...(c.skills||[]),...(c.technologies||[]),c.recruiter].join(" ").toLowerCase().includes(v)).slice(0,6);
+  const js=DB.jobs.filter(j=>(j.role+" "+j.id).toLowerCase().includes(v)).slice(0,5);
+  if(!cs.length&&!js.length){ qdrop.innerHTML=`<div class="search-drop"><div class="sr" style="color:var(--dim)">No match for “${esc(q.value)}”</div></div>`; return; }
+  qdrop.innerHTML=`<div class="search-drop">
+    ${js.length?`<div class="grp">Job roles</div>${js.map(j=>`<div class="sr" data-act="openjob" data-id="${j.id}">${esc(j.role)}<span class="sr-sub">${j.id}</span></div>`).join("")}`:""}
+    ${cs.length?`<div class="grp">Candidates</div>${cs.map(c=>`<div class="sr" data-act="opencand" data-id="${c.id}">${esc(c.name||c.id)}<span class="sr-sub">${esc(c.status)}</span></div>`).join("")}`:""}</div>`;
+});
+document.addEventListener("click",e=>{ if(!e.target.closest(".search")) qdrop.innerHTML=""; });
+
+document.getElementById("nav").addEventListener("click",e=>{
+  const b=e.target.closest(".nav-item"); if(!b) return; view=b.dataset.view; render();
+});
+document.addEventListener("click", async e=>{
+  const el=e.target.closest("[data-act]"); if(!el) return;
+  const a=el.dataset.act, id=el.dataset.id;
+  if(a==="newjob") drawerJob(null);
+  else if(a==="openjob"){ qdrop.innerHTML=""; drawerJob(jobById(id)); }
+  else if(a==="upload") drawerUpload();
+  else if(a==="opencand"){ qdrop.innerHTML=""; drawerCandidate(id); }
+  else if(a==="go-jobs"){ view="jobs"; render(); }
+  else if(a==="preset"){ rf.preset=el.dataset.k; render(); }
+  else if(a==="rtab"){ rf.tab=el.dataset.k; render(); }
+  else if(a==="grain"){ rf.grain=el.dataset.k; render(); }
+  else if(a==="exp") exportReport(el.dataset.fmt);
+  else if(a==="deljob"){
+    if(!confirm("Delete this job role? Candidates stay, but lose this tag.")) return;
+    DB.jobs=DB.jobs.filter(j=>j.id!==id);
+    const affected = DB.candidates.filter(c=>c.jobIds.includes(id));
+    affected.forEach(c=>c.jobIds=c.jobIds.filter(x=>x!==id));
+    await deleteJobRow(id);
+    for(const c of affected) await upsertCand(c);
+    closeDrawer(); render(); toast("Job role deleted.");
+  }
+  else if(a==="delcand"){
+    if(!confirm("Delete this candidate permanently? The stored resume goes too.")) return;
+    const gone = DB.candidates.find(c=>c.id===id);
+    if(gone?.resumePath) await deleteResumeFile(gone.resumePath);
+    await deleteCandRow(id);
+    DB.candidates=DB.candidates.filter(c=>c.id!==id);
+    closeDrawer(); render(); toast("Candidate deleted.");
+  }
+});
+
+const btnTheme = document.getElementById("btnTheme");
+function setTheme(t){
+  document.documentElement.dataset.theme = t;
+  btnTheme.textContent = t==="light" ? "☀" : "☾";
+  try{ localStorage.setItem("hiretrack:theme", t); }catch(e){}
+}
+btnTheme.onclick = () => setTheme(document.documentElement.dataset.theme==="light" ? "dark" : "light");
+
+const btnRail = document.getElementById("btnRail");
+function setRail(mode){
+  document.documentElement.dataset.rail = mode;
+  btnRail.textContent = mode==="mini" ? "▶" : "◀";
+  btnRail.title = mode==="mini" ? "Expand sidebar" : "Collapse sidebar";
+  try{ localStorage.setItem("hiretrack:rail", mode); }catch(e){}
+}
+btnRail.onclick = () => setRail(document.documentElement.dataset.rail==="mini" ? "full" : "mini");
+
+document.getElementById("btnReset").onclick = async () => {
+  if(!confirm("Clear all jobs, candidates and stored resumes?")) return;
+  for(const c of DB.candidates){ if(c.resumePath) await deleteResumeFile(c.resumePath); await deleteCandRow(c.id); }
+  for(const j of DB.jobs) await deleteJobRow(j.id);
+  DB={jobs:[],candidates:[],seq:{job:0,cand:0}}; render(); toast("Workspace cleared.");
+};
+setInterval(()=>{document.getElementById("clock").textContent=new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});},1000);
+
+/* ---------- BOOT ---------- */
+/* Records saved by earlier builds can have a blank location even though the
+   address is sitting right there. Backfill on load. */
+function migrate(){
+  let touched = 0;
+  DB.jobs.forEach(j=>{
+    if(j.status==="Closed" && !j.closedAt){ j.closedAt = j.createdAt; touched++; }
+    if(j.status!=="Closed" && j.closedAt){ j.closedAt = ""; touched++; }
+    if(j.openings === undefined) j.openings = "";
+  });
+  DB.candidates.forEach(c=>{
+    if(!c.location && c.address){ c.location = deriveLocation(c.address); if(c.location) touched++; }
+    if(!c.address && c.location){ c.address = c.location; touched++; }
+    if(c.currentFixed === undefined)    c.currentFixed = "";
+    if(c.currentVariable === undefined) c.currentVariable = "";
+    if(c.resumeStored === undefined)    c.resumeStored = false;
+    if(!Array.isArray(c.stints))        c.stints = [];
+  });
+  return touched; /* migrated rows are re-saved on next edit */
+}
+
+/* ---------- login gate ---------- */
+function loginScreen(msg){
+  document.querySelector(".shell").style.display = "none";
+  let el = document.getElementById("loginScreen");
+  if(!el){
+    el = document.createElement("div");
+    el.id = "loginScreen";
+    el.innerHTML = `
+      <div class="login-card">
+        <div class="brand-mark" style="justify-content:center;margin-bottom:6px">
+          <div class="brand-dot"></div><div class="brand-name">Hire Track</div>
+        </div>
+        <div class="login-sub">Sign in to continue</div>
+        <div class="field" style="margin-top:22px"><label>Email</label>
+          <input class="inp" id="lgEmail" type="email" autocomplete="username" placeholder="you@company.com"></div>
+        <div class="field" style="margin-top:14px"><label>Password</label>
+          <input class="inp" id="lgPass" type="password" autocomplete="current-password" placeholder="••••••••"></div>
+        <div class="login-err" id="lgErr"></div>
+        <button class="btn primary" id="lgBtn" style="width:100%;justify-content:center;margin-top:18px">Sign in</button>
+      </div>`;
+    document.body.appendChild(el);
+    const go = async () => {
+      const email = document.getElementById("lgEmail").value.trim();
+      const pass  = document.getElementById("lgPass").value;
+      const err   = document.getElementById("lgErr");
+      err.textContent = "";
+      const { error } = await sb.auth.signInWithPassword({email, password:pass});
+      if(error){ err.textContent = error.message; return; }
+      el.remove(); start();
+    };
+    document.getElementById("lgBtn").onclick = go;
+    document.getElementById("lgPass").addEventListener("keydown", e=>{ if(e.key==="Enter") go(); });
+  }
+  if(msg) document.getElementById("lgErr").textContent = msg;
+}
+
+/* ---------- signed-in start ---------- */
+async function start(){
+  document.querySelector(".shell").style.display = "";
+  setTheme(localStorage.getItem("hiretrack:theme") || "dark");
+  setRail(localStorage.getItem("hiretrack:rail") || "full");
+  await loadAll();
+  const fixed = migrate();
+  render();
+  if(fixed){ await saveAll(); toast(`Filled in location for ${fixed} candidate${fixed===1?"":"s"}.`); }
+}
+
+/* wire the sign-out control (added to the top bar markup) */
+document.addEventListener("click", async e=>{
+  if(e.target.closest("#btnSignOut")){
+    await sb.auth.signOut();
+    location.reload();
+  }
+});
+
+/* ---------- boot: check for an existing session ---------- */
+(async function boot(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(session) start(); else loginScreen();
+})();
+</script>

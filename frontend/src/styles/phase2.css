@@ -1,0 +1,472 @@
+/* ==================================================================== */
+/*  PHASE 2 — supplemental Ink & Bone component classes                  */
+/*  Ported faithfully from reference/index (1).html for the pieces the    */
+/*  Phase-1 kit did not ship (tables, JD sheet, stints, dropzone, drawer  */
+/*  tabs, report segments, timeline, resume row, search dropdown).        */
+/*  index.css is NOT edited — this file is imported by the Phase-2 pages.  */
+/*  All classes below are unique (verified absent from index.css).        */
+/* ==================================================================== */
+
+/* ---------------- data tables ---------------- */
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+}
+.tbl th {
+  text-align: left;
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--dim);
+  font-weight: 600;
+  padding: 13px 16px;
+  background: var(--panel-2);
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.tbl td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+  font-size: 13.5px;
+}
+.tbl tr:last-child td {
+  border-bottom: 0;
+}
+.tbl tbody tr {
+  transition: background 0.1s;
+}
+.tbl tbody tr:hover {
+  background: var(--wash);
+}
+.tbl .mono {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.tbl-scroll {
+  overflow-x: auto;
+}
+
+/* ---------------- JD sheet ---------------- */
+.jd-rows {
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  margin-top: 4px;
+}
+.jd-row {
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  border-bottom: 1px solid var(--line);
+}
+.jd-row:last-child {
+  border-bottom: 0;
+}
+.jd-row.head {
+  background: var(--wash);
+}
+.jd-row.head .jd-v {
+  font-family: var(--disp);
+  font-weight: 400;
+  font-size: 25px;
+  letter-spacing: -0.5px;
+  color: var(--orange);
+  line-height: 1.15;
+}
+.jd-k {
+  padding: 12px 16px;
+  background: var(--panel-2);
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+  border-right: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+}
+.jd-row.head .jd-k {
+  background: transparent;
+  color: var(--orange);
+}
+.jd-v {
+  padding: 12px 16px;
+  min-width: 0;
+}
+.jd-body {
+  margin-top: 22px;
+  font-size: 14px;
+  line-height: 1.78;
+  white-space: pre-wrap;
+  color: var(--muted);
+  max-width: 70ch;
+}
+@media (max-width: 860px) {
+  .jd-row {
+    grid-template-columns: 1fr;
+  }
+  .jd-k {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+}
+
+/* ---------------- stints: dotted leaders ---------------- */
+.stint {
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 13px;
+  padding: 8px 0;
+  border-bottom: 1px dotted var(--line-2);
+}
+.stint:last-child {
+  border-bottom: 0;
+}
+.stint .t {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stint .t .co {
+  color: var(--dim);
+}
+.stint .r {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+  white-space: nowrap;
+}
+.stint .m {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--orange);
+  white-space: nowrap;
+  min-width: 54px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------- dropzone ---------------- */
+.drop {
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r);
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.14s, background 0.14s;
+  background-image: repeating-linear-gradient(-45deg, var(--panel) 0 1px, transparent 1px 9px);
+}
+.drop:hover,
+.drop.over {
+  border-color: var(--orange);
+  background-color: var(--wash);
+}
+.drop .big {
+  font-family: var(--disp);
+  font-size: 21px;
+  margin-bottom: 6px;
+  color: var(--text);
+}
+.drop .sm {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.parsing {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 13px;
+  padding: 16px 0;
+}
+.spin {
+  width: 13px;
+  height: 13px;
+  border: 2px solid var(--line-2);
+  border-top-color: var(--orange);
+  border-radius: 50%;
+  animation: p2-sp 0.7s linear infinite;
+  flex: 0 0 auto;
+}
+@keyframes p2-sp {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---------------- drawer tabs (namespaced to avoid clash) ---------------- */
+.dtabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 22px;
+}
+.dtabs button {
+  background: none;
+  border: 0;
+  padding: 10px 16px;
+  cursor: pointer;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: 14px;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 600;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color 0.12s, border-color 0.12s;
+}
+.dtabs button:hover {
+  color: var(--text);
+}
+.dtabs button.on {
+  color: var(--orange);
+  border-bottom-color: var(--orange);
+}
+
+/* ---------------- report filters / segments ---------------- */
+.filters {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.seg {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  overflow: hidden;
+  flex-wrap: wrap;
+}
+.seg button {
+  background: transparent;
+  border: 0;
+  border-right: 1px solid var(--line);
+  padding: 8px 13px;
+  cursor: pointer;
+  color: var(--muted);
+  font-size: 12.5px;
+  white-space: nowrap;
+  transition: background 0.1s, color 0.1s;
+}
+.seg button:last-child {
+  border-right: 0;
+}
+.seg button:hover {
+  color: var(--text);
+  background: var(--panel-2);
+}
+.seg button.on {
+  background: var(--orange);
+  color: #fff;
+  font-weight: 600;
+}
+.filters .slct,
+.filters .inp {
+  width: auto;
+}
+
+/* ---------------- ledger metrics (openings summary) ---------------- */
+.ledger {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0;
+  margin-bottom: 28px;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+.ledger .m {
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 16px 18px 18px;
+}
+.ledger .m .k {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.ledger .m .v {
+  font-family: var(--disp);
+  font-size: 40px;
+  letter-spacing: -1px;
+  margin-top: 10px;
+  font-variant-numeric: tabular-nums;
+  line-height: 0.95;
+}
+.ledger .m.hot .v {
+  color: var(--orange);
+}
+
+/* ---------------- history timeline ---------------- */
+.hist {
+  border-left: 1px solid var(--line);
+  padding-left: 20px;
+  margin-left: 5px;
+}
+.hist-i {
+  position: relative;
+  padding-bottom: 16px;
+  font-size: 13.5px;
+}
+.hist-i:last-child {
+  padding-bottom: 0;
+}
+.hist-i::before {
+  content: '';
+  position: absolute;
+  left: -24px;
+  top: 7px;
+  width: 7px;
+  height: 7px;
+  background: var(--orange);
+}
+.hist-t {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  color: var(--dim);
+  margin-top: 2px;
+}
+
+/* ---------------- resume file row ---------------- */
+.resume-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel);
+}
+.resume-row .fn {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
+}
+.resume-row .sz {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--dim);
+  white-space: nowrap;
+}
+.resume-row .ico {
+  color: var(--orange);
+  font-size: 16px;
+  flex: 0 0 auto;
+}
+
+/* ---------------- form grid (drawer) ---------------- */
+.fgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+}
+.fgrid .wide {
+  grid-column: 1 / -1;
+}
+
+/* ---------------- global-search dropdown ---------------- */
+.search-drop {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  max-height: 340px;
+  overflow: auto;
+  z-index: 40;
+  box-shadow: var(--shadow);
+}
+.search-drop .grp {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--dim);
+  padding: 11px 14px 6px;
+}
+.search-drop .sr {
+  padding: 9px 14px;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: 0;
+  color: var(--text);
+}
+.search-drop .sr:hover {
+  background: var(--wash);
+  color: var(--orange);
+}
+.search-drop .sr .sr-sub {
+  color: var(--dim);
+  font-size: 11px;
+  margin-left: auto;
+  font-family: var(--mono);
+}
+
+/* ---------------- misc helpers ---------------- */
+.pill-bar {
+  height: 4px;
+  border-radius: 1px;
+  overflow: hidden;
+  position: relative;
+  background: var(--panel-2);
+}
+.pill-bar > i {
+  display: block;
+  height: 100%;
+  background: var(--orange);
+  transition: width 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.dup-note {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--amber);
+  border-radius: var(--r);
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.dup-note b {
+  color: var(--amber);
+}
+.note-box {
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r);
+  background: var(--panel-2);
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.55;
+}
+.inline-hint {
+  font-size: 12px;
+  color: var(--dim);
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-transform: none;
+}
