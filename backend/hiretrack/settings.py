@@ -103,15 +103,17 @@ ASGI_APPLICATION = "hiretrack.asgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.getenv("POSTGRES_DB", "hiretrack"),
-        "USER": os.getenv("POSTGRES_USER", "hiretrack"),
+        # .strip() guards against stray whitespace pasted into a dashboard env
+        # var (e.g. a leading space in POSTGRES_DB → 'database " neondb"' errors).
+        "NAME": os.getenv("POSTGRES_DB", "hiretrack").strip(),
+        "USER": os.getenv("POSTGRES_USER", "hiretrack").strip(),
         "PASSWORD": os.getenv("POSTGRES_PASSWORD", "hiretrack"),
-        "HOST": os.getenv("POSTGRES_HOST", "localhost"),
-        "PORT": os.getenv("POSTGRES_PORT", "5432"),
+        "HOST": os.getenv("POSTGRES_HOST", "localhost").strip(),
+        "PORT": os.getenv("POSTGRES_PORT", "5432").strip(),
         "CONN_MAX_AGE": 60,
         # Neon (and most managed Postgres) require SSL. Default to "prefer" so a
         # plain local server still works; set POSTGRES_SSLMODE=require for Neon.
-        "OPTIONS": {"sslmode": os.getenv("POSTGRES_SSLMODE", "prefer")},
+        "OPTIONS": {"sslmode": os.getenv("POSTGRES_SSLMODE", "prefer").strip()},
     }
 }
 
