@@ -376,10 +376,17 @@ class ResumeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         # Hide resumes belonging to a soft-deleted candidate (Recycle Bin), while
         # still showing not-yet-linked resumes (candidate is null).
-        return (
+        qs = (
             Resume.objects.select_related("candidate")
             .filter(Q(candidate__isnull=True) | Q(candidate__deleted_at__isnull=True))
         )
+        # Honour ?candidate=<id> so the profile page can reliably fetch a single
+        # candidate's resume regardless of how many resumes exist overall (the
+        # UI previously relied on the newest page containing the match).
+        candidate_id = self.request.query_params.get("candidate")
+        if candidate_id:
+            qs = qs.filter(candidate_id=candidate_id)
+        return qs
 
     @action(
         detail=False,
