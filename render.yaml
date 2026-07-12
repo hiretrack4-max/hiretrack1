@@ -9,6 +9,8 @@ services:
     runtime: python
     plan: free
     rootDir: backend
+    branch: main
+    autoDeploy: true          # redeploy automatically on every push to main
     buildCommand: "bash ./build.sh"
     startCommand: "gunicorn hiretrack.wsgi:application"
     healthCheckPath: /api/auth/me/
