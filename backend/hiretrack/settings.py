@@ -155,21 +155,25 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 # Media storage backend. Free hosts (Render) have an EPHEMERAL filesystem that
 # is wiped on every redeploy, which would destroy uploaded resumes. When the
-# R2_* env vars are set, media is stored in a Cloudflare R2 (S3-compatible)
-# bucket instead; with them unset the app uses the local filesystem (dev).
-R2_BUCKET = os.getenv("R2_BUCKET", "")
+# STORAGE_BUCKET env var is set, media is stored in an S3-compatible object
+# store (Supabase Storage or Cloudflare R2); with it unset the app uses the
+# local filesystem (dev).
+STORAGE_BUCKET = os.getenv("STORAGE_BUCKET", "")
 
-if R2_BUCKET:
+if STORAGE_BUCKET:
     _media_storage = {
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
-            "access_key": os.getenv("R2_ACCESS_KEY_ID", ""),
-            "secret_key": os.getenv("R2_SECRET_ACCESS_KEY", ""),
-            "bucket_name": R2_BUCKET,
-            "endpoint_url": os.getenv("R2_ENDPOINT_URL", ""),
-            "region_name": os.getenv("R2_REGION", "auto"),
+            "access_key": os.getenv("STORAGE_ACCESS_KEY", ""),
+            "secret_key": os.getenv("STORAGE_SECRET_KEY", ""),
+            "bucket_name": STORAGE_BUCKET,
+            "endpoint_url": os.getenv("STORAGE_ENDPOINT_URL", ""),
+            "region_name": os.getenv("STORAGE_REGION", "auto"),
             "signature_version": "s3v4",
-            "default_acl": None,          # R2 has no ACLs; bucket stays private
+            # Supabase (and most S3-compatible stores) require path-style URLs;
+            # R2 tolerates it too, so this is the safe default for both.
+            "addressing_style": "path",
+            "default_acl": None,          # these stores don't use ACLs; bucket stays private
             "querystring_auth": True,     # serve resumes via short-lived signed URLs
             "file_overwrite": False,      # never clobber an existing upload
         },

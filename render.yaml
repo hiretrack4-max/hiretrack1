@@ -47,12 +47,15 @@ services:
         value: "5432"
       - key: POSTGRES_SSLMODE
         value: "require"
-      # Cloudflare R2 (resume file storage). Leave unset to use local disk.
-      - key: R2_BUCKET
+      # S3-compatible resume storage (Supabase Storage or Cloudflare R2).
+      # Leave unset to use local disk.
+      - key: STORAGE_BUCKET
         sync: false
-      - key: R2_ACCESS_KEY_ID
+      - key: STORAGE_ACCESS_KEY
         sync: false
-      - key: R2_SECRET_ACCESS_KEY
+      - key: STORAGE_SECRET_KEY
         sync: false
-      - key: R2_ENDPOINT_URL               # https://<accountid>.r2.cloudflarestorage.com
+      - key: STORAGE_ENDPOINT_URL           # Supabase: https://<ref>.supabase.co/storage/v1/s3
+        sync: false
+      - key: STORAGE_REGION                 # Supabase: the project region, e.g. ap-south-1
         sync: false
