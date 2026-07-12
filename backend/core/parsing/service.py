@@ -21,6 +21,7 @@ single-user portal; name collisions are common, emails are not.
 """
 from __future__ import annotations
 
+import contextlib
 import datetime
 import logging
 import os
@@ -48,6 +49,40 @@ logger = logging.getLogger(__name__)
 _MAX_YEARS = Decimal("999.9")
 
 
+@contextlib.contextmanager
+def _local_resume_path(file_field):
+    """Yield a local filesystem path for a resume ``FieldFile``.
+
+    Local/dev storage exposes ``file.path`` directly. Remote S3-compatible
+    storage (Supabase, R2) does NOT — accessing ``.path`` raises
+    ``NotImplementedError`` — so the file is streamed down to a short-lived temp
+    file whose path is yielded instead (and removed afterwards). This is what
+    makes resume parsing work in production, where uploads live in Supabase.
+    """
+    try:
+        path = file_field.path
+    except (NotImplementedError, ValueError):
+        path = None
+    if path:
+        yield path
+        return
+
+    suffix = os.path.splitext(file_field.name or "")[1]
+    tmp = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    try:
+        file_field.open("rb")
+        try:
+            for chunk in file_field.chunks():
+                tmp.write(chunk)
+        finally:
+            file_field.close()
+        tmp.close()
+        yield tmp.name
+    finally:
+        with contextlib.suppress(OSError):
+            os.remove(tmp.name)
+
+
 def parse_resume(resume: Resume) -> None:
     """Parse ``resume`` and populate its Candidate. Safe to call synchronously.
 
@@ -65,8 +100,11 @@ def parse_resume(resume: Resume) -> None:
     resume.save(update_fields=["parse_status", "parse_error"])
 
     # --- 1 & 2: extract raw text ------------------------------------------
+    # Works for both local storage (file.path) and remote S3/Supabase storage
+    # (no local path -> stream to a temp file first).
     try:
-        text = extract_text(resume.file.path, resume.file_type)
+        with _local_resume_path(resume.file) as local_path:
+            text = extract_text(local_path, resume.file_type)
     except ExtractionError as exc:
         _fail(resume, str(exc))
         return
