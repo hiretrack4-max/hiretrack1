@@ -172,6 +172,8 @@ export function useDeleteCandidate() {
       qc.invalidateQueries({ queryKey: ['candidates'] });
       qc.invalidateQueries({ queryKey: ['jobs'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
+      // The delete is a soft delete — the record now lives in the Recycle Bin.
+      qc.invalidateQueries({ queryKey: ['recycle-bin'] });
     },
   });
 }

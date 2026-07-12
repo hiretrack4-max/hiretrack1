@@ -143,14 +143,14 @@ export default function CandidateDetail() {
         open={confirmDelete}
         onClose={() => setConfirmDelete(false)}
         title="Delete this candidate?"
-        description="This permanently removes the candidate profile, resume, skills, job mappings and interview records. This cannot be undone."
+        description="The candidate — with their resume, skills, job mappings and interviews — moves to the Recycle Bin, where you can restore it later."
         confirmLabel="Delete"
         danger
         loading={deleteCandidate.isPending}
         onConfirm={() =>
           deleteCandidate.mutate(candidate.id, {
             onSuccess: () => {
-              toast.success('Candidate deleted', candidate.full_name);
+              toast.success('Moved to Recycle Bin', candidate.full_name);
               navigate('/candidates');
             },
             onError: (err) => toast.error('Could not delete candidate', apiErrorMessage(err)),

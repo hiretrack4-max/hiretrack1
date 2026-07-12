@@ -15,8 +15,10 @@ import logging
 import os
 
 from django.contrib.postgres.search import SearchQuery, SearchRank
+from django.db import transaction
 from django.db.models import Count, F, Q
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as df_filters
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -53,6 +55,8 @@ from .serializers import (
     NotificationSerializer,
     OfferSerializer,
     RecruitmentStatusSerializer,
+    RecycleBinCandidateSerializer,
+    RecycleBinJobSerializer,
     ReportConfigurationSerializer,
     ResumeSerializer,
     ResumeUploadSerializer,
@@ -121,10 +125,37 @@ class JobViewSet(viewsets.ModelViewSet):
     ordering = ["-created_at"]
 
     def get_queryset(self):
+        # ``Job.objects`` hides soft-deleted jobs (default SoftDeleteManager).
+        # The candidate count also excludes mappings to soft-deleted candidates
+        # so no Recycle-Bin data leaks into the count.
         return (
             Job.objects.select_related("description")
-            .annotate(candidate_count=Count("candidate_mappings", distinct=True))
+            .annotate(
+                candidate_count=Count(
+                    "candidate_mappings",
+                    filter=Q(candidate_mappings__candidate__deleted_at__isnull=True),
+                    distinct=True,
+                )
+            )
         )
+
+    def perform_destroy(self, instance):
+        # Soft delete (Recycle Bin): stamp ``deleted_at`` instead of erasing.
+        instance.soft_delete()
+
+    @action(detail=True, methods=["post"])
+    def restore(self, request, pk=None):
+        """Restore a soft-deleted job from the Recycle Bin."""
+        job = get_object_or_404(Job.all_objects, pk=pk)
+        job.restore()
+        return Response(JobSerializer(job, context=self.get_serializer_context()).data)
+
+    @action(detail=True, methods=["delete"])
+    def purge(self, request, pk=None):
+        """Permanently delete a job (hard delete; not restorable)."""
+        job = get_object_or_404(Job.all_objects, pk=pk)
+        job.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=["post"])
     def parse_description(self, request):
@@ -167,10 +198,31 @@ class CandidateViewSet(viewsets.ModelViewSet):
     ordering = ["-created_at"]
 
     def get_queryset(self):
+        # ``Candidate.objects`` hides soft-deleted candidates (SoftDeleteManager).
         qs = Candidate.objects.all()
         if self.action == "retrieve":
             qs = qs.prefetch_related("skills", "experiences", "job_mappings__job")
         return qs
+
+    def perform_destroy(self, instance):
+        # Soft delete (Recycle Bin): stamp ``deleted_at`` instead of erasing.
+        instance.soft_delete()
+
+    @action(detail=True, methods=["post"])
+    def restore(self, request, pk=None):
+        """Restore a soft-deleted candidate from the Recycle Bin."""
+        candidate = get_object_or_404(Candidate.all_objects, pk=pk)
+        candidate.restore()
+        return Response(
+            CandidateListSerializer(candidate, context=self.get_serializer_context()).data
+        )
+
+    @action(detail=True, methods=["delete"])
+    def purge(self, request, pk=None):
+        """Permanently delete a candidate (hard delete; not restorable)."""
+        candidate = get_object_or_404(Candidate.all_objects, pk=pk)
+        candidate.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -275,7 +327,11 @@ class CandidateJobMappingViewSet(viewsets.ModelViewSet):
     ordering = ["-applied_date"]
 
     def get_queryset(self):
-        return CandidateJobMapping.objects.select_related("candidate", "job")
+        # Hide mappings whose candidate or job is in the Recycle Bin (mappings
+        # have no ``deleted_at`` of their own, so they must be filtered explicitly).
+        return CandidateJobMapping.objects.select_related("candidate", "job").filter(
+            candidate__deleted_at__isnull=True, job__deleted_at__isnull=True
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -288,7 +344,11 @@ class InterviewViewSet(viewsets.ModelViewSet):
     ordering = ["interview_date", "interview_time"]
 
     def get_queryset(self):
-        return Interview.objects.select_related("mapping__candidate", "mapping__job")
+        # Exclude interviews whose candidate or job is in the Recycle Bin.
+        return Interview.objects.select_related("mapping__candidate", "mapping__job").filter(
+            mapping__candidate__deleted_at__isnull=True,
+            mapping__job__deleted_at__isnull=True,
+        )
 
 
 class OfferViewSet(viewsets.ModelViewSet):
@@ -298,7 +358,11 @@ class OfferViewSet(viewsets.ModelViewSet):
     ordering = ["-offer_date"]
 
     def get_queryset(self):
-        return Offer.objects.select_related("mapping__candidate", "mapping__job")
+        # Exclude offers whose candidate or job is in the Recycle Bin.
+        return Offer.objects.select_related("mapping__candidate", "mapping__job").filter(
+            mapping__candidate__deleted_at__isnull=True,
+            mapping__job__deleted_at__isnull=True,
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -306,9 +370,16 @@ class OfferViewSet(viewsets.ModelViewSet):
 # ---------------------------------------------------------------------------
 class ResumeViewSet(viewsets.ModelViewSet):
     serializer_class = ResumeSerializer
-    queryset = Resume.objects.select_related("candidate").all()
     ordering_fields = ["uploaded_at", "parse_status"]
     ordering = ["-uploaded_at"]
+
+    def get_queryset(self):
+        # Hide resumes belonging to a soft-deleted candidate (Recycle Bin), while
+        # still showing not-yet-linked resumes (candidate is null).
+        return (
+            Resume.objects.select_related("candidate")
+            .filter(Q(candidate__isnull=True) | Q(candidate__deleted_at__isnull=True))
+        )
 
     @action(
         detail=False,
@@ -755,11 +826,17 @@ class DashboardStatsView(APIView):
         ]
 
         # --- Chart 4: department-wise hiring ---------------------------------
+        # ``Job.objects`` already excludes soft-deleted jobs; also exclude
+        # mappings to soft-deleted candidates so the count reflects live data.
         department_series = list(
             Job.objects.values("department")
             .annotate(
                 jobs=Count("id", distinct=True),
-                candidates=Count("candidate_mappings", distinct=True),
+                candidates=Count(
+                    "candidate_mappings",
+                    filter=Q(candidate_mappings__candidate__deleted_at__isnull=True),
+                    distinct=True,
+                ),
             )
             .order_by("-candidates", "department")
         )
@@ -776,4 +853,56 @@ class DashboardStatsView(APIView):
                     "department_hiring": department_series,
                 },
             }
+        )
+
+
+# ---------------------------------------------------------------------------
+# Recycle Bin (soft delete) + Reset (clear all data)
+# ---------------------------------------------------------------------------
+class RecycleBinView(APIView):
+    """
+    GET /api/recycle-bin/
+
+    Lists everything currently in the Recycle Bin — soft-deleted candidates and
+    jobs — most-recently-deleted first. Each entry is restorable
+    (POST /api/{candidates|jobs}/{id}/restore/) or permanently removable
+    (DELETE /api/{candidates|jobs}/{id}/purge/).
+    """
+
+    def get(self, request):
+        candidates = Candidate.all_objects.filter(deleted_at__isnull=False).order_by(
+            "-deleted_at"
+        )
+        jobs = Job.all_objects.filter(deleted_at__isnull=False).order_by("-deleted_at")
+        return Response(
+            {
+                "candidates": RecycleBinCandidateSerializer(candidates, many=True).data,
+                "jobs": RecycleBinJobSerializer(jobs, many=True).data,
+            }
+        )
+
+
+class ResetView(APIView):
+    """
+    POST /api/reset/
+
+    Soft-deletes ALL live candidates and jobs at once (a fresh start). Everything
+    moves to the Recycle Bin and stays restorable — nothing is erased. The user
+    login, saved report configurations and the audit log are left untouched.
+
+    Each soft-delete is recorded in the audit log by the existing save signal (a
+    ``deleted_at`` UPDATE), so a reset is fully traceable and reversible. Returns
+    the number of candidates and jobs moved to the bin.
+    """
+
+    def post(self, request):
+        with transaction.atomic():
+            candidates = list(Candidate.objects.all())
+            jobs = list(Job.objects.all())
+            for candidate in candidates:
+                candidate.soft_delete()
+            for job in jobs:
+                job.soft_delete()
+        return Response(
+            {"candidates_removed": len(candidates), "jobs_removed": len(jobs)}
         )

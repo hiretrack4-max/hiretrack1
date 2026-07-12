@@ -44,6 +44,23 @@ class TimeStampedModel(models.Model):
 
 
 # ---------------------------------------------------------------------------
+# Soft delete (Recycle Bin)
+# ---------------------------------------------------------------------------
+class SoftDeleteManager(models.Manager):
+    """Default manager that hides soft-deleted rows (``deleted_at`` is set).
+
+    Models using it (Job, Candidate) also expose ``all_objects = Manager()`` for
+    unfiltered access — the Recycle Bin, restore and purge flows. Django keeps
+    ``_base_manager`` an unfiltered plain ``Manager`` by default, so cascades and
+    related lookups still resolve soft-deleted parents; only the *default* query
+    surface (``objects``) filters them out.
+    """
+
+    def get_queryset(self):
+        return super().get_queryset().filter(deleted_at__isnull=True)
+
+
+# ---------------------------------------------------------------------------
 # User profile (lightweight; single-user portal, room for prefs later)
 # ---------------------------------------------------------------------------
 class Profile(TimeStampedModel):
@@ -123,6 +140,13 @@ class Job(TimeStampedModel):
     # drives the "Roles/Openings closed" columns of the openings report (Module 8).
     closed_at = models.DateTimeField(null=True, blank=True, db_index=True)
 
+    # Soft delete (Recycle Bin): non-null == in the bin, restorable. Indexed so
+    # the default manager's ``deleted_at IS NULL`` filter stays cheap at scale.
+    deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    objects = SoftDeleteManager()
+    all_objects = models.Manager()
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [
@@ -153,6 +177,18 @@ class Job(TimeStampedModel):
         if creating and not self.job_id:
             self.job_id = f"JOB-{self.pk:06d}"
             super().save(update_fields=["job_id"])
+
+    def soft_delete(self):
+        """Move this job to the Recycle Bin (restorable)."""
+        if self.deleted_at is None:
+            self.deleted_at = timezone.now()
+            self.save(update_fields=["deleted_at", "updated_at"])
+
+    def restore(self):
+        """Bring this job back from the Recycle Bin."""
+        if self.deleted_at is not None:
+            self.deleted_at = None
+            self.save(update_fields=["deleted_at", "updated_at"])
 
 
 class JobDescription(TimeStampedModel):
@@ -273,6 +309,12 @@ class Candidate(TimeStampedModel):
     # PostgreSQL full-text search document (GIN-indexed below).
     search_vector = SearchVectorField(null=True, editable=False)
 
+    # Soft delete (Recycle Bin): non-null == in the bin, restorable.
+    deleted_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    objects = SoftDeleteManager()
+    all_objects = models.Manager()
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [
@@ -296,6 +338,18 @@ class Candidate(TimeStampedModel):
         self.skills_cache = ", ".join(dict.fromkeys(names))  # de-dupe, keep order
         if commit:
             super().save(update_fields=["skills_cache"])
+
+    def soft_delete(self):
+        """Move this candidate to the Recycle Bin (restorable)."""
+        if self.deleted_at is None:
+            self.deleted_at = timezone.now()
+            self.save(update_fields=["deleted_at", "updated_at"])
+
+    def restore(self):
+        """Bring this candidate back from the Recycle Bin."""
+        if self.deleted_at is not None:
+            self.deleted_at = None
+            self.save(update_fields=["deleted_at", "updated_at"])
 
 
 # ---------------------------------------------------------------------------

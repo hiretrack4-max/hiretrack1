@@ -232,6 +232,9 @@ def build_report_rows(date_filter, custom_start=None, custom_end=None, columns=N
         )
         # Filter on the candidate's most recent resume-upload date (documented above).
         .filter(resume_upload_dt__gte=start_dt, resume_upload_dt__lte=end_dt)
+        # Exclude mappings whose candidate or job is in the Recycle Bin (this is
+        # CandidateJobMapping-grain, so soft-deleted parents don't auto-filter).
+        .filter(candidate__deleted_at__isnull=True, job__deleted_at__isnull=True)
         .order_by("candidate__full_name", "job__job_id")
     )
 
@@ -410,10 +413,13 @@ def build_openings_report_rows(grain=GRAIN_MONTH, columns=None):
     column_pairs = resolve_columns(columns, registry=OPENINGS_COLUMN_REGISTRY)
     keys = [k for k, _ in column_pairs]
 
+    # ``Job.objects`` already excludes soft-deleted jobs (SoftDeleteManager);
+    # exclude joined-transitions of soft-deleted candidates for the same reason.
     jobs = list(Job.objects.values("created_at", "closed_at", "number_of_openings"))
     joined_dts = list(
         RecruitmentStatus.objects.filter(
-            new_status=Candidate.Status.JOINED
+            new_status=Candidate.Status.JOINED,
+            candidate__deleted_at__isnull=True,
         ).values_list("changed_at", flat=True)
     )
 

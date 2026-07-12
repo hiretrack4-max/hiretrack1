@@ -6,6 +6,7 @@ import {
   Users,
   FileBarChart2,
   Bell,
+  Trash2,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -26,6 +27,7 @@ const RAIL_ITEMS: RailItem[] = [
   { label: 'Candidates', to: '/candidates', icon: Users, count: 'candidates' },
   { label: 'Reports', to: '/reports', icon: FileBarChart2 },
   { label: 'Notifications', to: '/notifications', icon: Bell, count: 'unread' },
+  { label: 'Recycle Bin', to: '/recycle-bin', icon: Trash2 },
 ];
 
 export interface RailProps {

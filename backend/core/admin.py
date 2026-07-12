@@ -74,6 +74,7 @@ class JobAdmin(admin.ModelAdmin):
         "number_of_openings",
         "job_status",
         "is_archived",
+        "deleted_at",
         "created_at",
     )
     list_filter = ("job_status", "employment_type", "department", "is_archived")
@@ -81,6 +82,11 @@ class JobAdmin(admin.ModelAdmin):
     readonly_fields = ("job_id", "created_at", "updated_at")
     inlines = [JobDescriptionInline]
     date_hierarchy = "created_at"
+
+    def get_queryset(self, request):
+        # Show soft-deleted (Recycle Bin) jobs in admin too; clear ``deleted_at``
+        # to restore. The default ``objects`` manager would hide them.
+        return Job.all_objects.get_queryset()
 
 
 @admin.register(JobDescription)
@@ -99,6 +105,7 @@ class CandidateAdmin(admin.ModelAdmin):
         "current_company",
         "total_experience_years",
         "candidate_status",
+        "deleted_at",
         "created_at",
     )
     list_filter = ("candidate_status", "current_location")
@@ -113,6 +120,11 @@ class CandidateAdmin(admin.ModelAdmin):
     readonly_fields = ("skills_cache", "search_vector", "created_at", "updated_at")
     inlines = [CandidateSkillInline, CandidateExperienceInline, ResumeInline]
     date_hierarchy = "created_at"
+
+    def get_queryset(self, request):
+        # Show soft-deleted (Recycle Bin) candidates in admin too; clear
+        # ``deleted_at`` to restore. The default ``objects`` manager hides them.
+        return Candidate.all_objects.get_queryset()
 
 
 @admin.register(CandidateSkill)

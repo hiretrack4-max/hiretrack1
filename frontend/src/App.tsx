@@ -11,6 +11,7 @@ import CandidateCreate from '@/pages/candidates/CandidateCreate';
 import Reports from '@/pages/Reports';
 import Search from '@/pages/Search';
 import Notifications from '@/pages/Notifications';
+import RecycleBin from '@/pages/RecycleBin';
 import NotFound from '@/pages/NotFound';
 
 export default function App() {
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/reports" element={<Reports />} />
           <Route path="/search" element={<Search />} />
           <Route path="/notifications" element={<Notifications />} />
+          <Route path="/recycle-bin" element={<RecycleBin />} />
           <Route path="*" element={<NotFound />} />
         </Route>
 

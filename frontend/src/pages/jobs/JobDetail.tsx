@@ -324,14 +324,14 @@ export default function JobDetail() {
         open={confirm === 'delete'}
         onClose={() => setConfirm(null)}
         title="Delete this job?"
-        description="This permanently removes the requisition and its mappings."
+        description="The job moves to the Recycle Bin — you can restore it later from there."
         confirmLabel="Delete"
         danger
         loading={remove.isPending}
         onConfirm={() =>
           remove.mutate(undefined, {
             onSuccess: () => {
-              toast.success('Job deleted');
+              toast.success('Moved to Recycle Bin', job.job_role);
               navigate('/jobs');
             },
             onError: (err) => toast.error('Failed', apiErrorMessage(err)),

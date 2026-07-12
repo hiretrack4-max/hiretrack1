@@ -355,3 +355,34 @@ export interface SearchResponse {
   count: number;
   results: CandidateListItem[];
 }
+
+// --- Recycle Bin (soft delete) --------------------------------------------
+/** A soft-deleted candidate row shown in the Recycle Bin. */
+export interface RecycleBinCandidate {
+  id: number;
+  full_name: string;
+  candidate_status: CandidateStatusValue;
+  deleted_at: string;
+  created_at: string;
+}
+
+/** A soft-deleted job row shown in the Recycle Bin. */
+export interface RecycleBinJob {
+  id: number;
+  job_id: string;
+  job_role: string;
+  job_status: JobStatus;
+  deleted_at: string;
+  created_at: string;
+}
+
+export interface RecycleBin {
+  candidates: RecycleBinCandidate[];
+  jobs: RecycleBinJob[];
+}
+
+/** Response of `POST /api/reset/` — counts moved to the Recycle Bin. */
+export interface ResetResult {
+  candidates_removed: number;
+  jobs_removed: number;
+}

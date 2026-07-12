@@ -5,6 +5,7 @@ import {
   BarChart3,
   Search,
   Bell,
+  Trash2,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -21,4 +22,5 @@ export const NAV_ITEMS: NavItem[] = [
   { label: 'Reports', to: '/reports', icon: BarChart3 },
   { label: 'Search', to: '/search', icon: Search },
   { label: 'Notifications', to: '/notifications', icon: Bell },
+  { label: 'Recycle Bin', to: '/recycle-bin', icon: Trash2 },
 ];

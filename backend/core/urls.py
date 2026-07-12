@@ -20,8 +20,10 @@ from .api import (
     NotificationViewSet,
     OfferViewSet,
     RecruitmentStatusViewSet,
+    RecycleBinView,
     ReportConfigurationViewSet,
     ReportExportView,
+    ResetView,
     ResumeViewSet,
 )
 
@@ -45,5 +47,7 @@ urlpatterns = [
     path("search/", GlobalSearchView.as_view(), name="global-search"),
     path("dashboard/stats/", DashboardStatsView.as_view(), name="dashboard-stats"),
     path("reports/export/", ReportExportView.as_view(), name="report-export"),
+    path("recycle-bin/", RecycleBinView.as_view(), name="recycle-bin"),
+    path("reset/", ResetView.as_view(), name="reset"),
     path("", include(router.urls)),
 ]

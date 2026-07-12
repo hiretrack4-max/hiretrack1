@@ -86,7 +86,10 @@ def _snapshot(instance):
 def _capture_old(sender, instance, **kwargs):
     if instance.pk and not instance._state.adding:
         try:
-            instance._audit_old = _snapshot(sender.objects.get(pk=instance.pk))
+            # ``_base_manager`` is unfiltered, so this still finds soft-deleted
+            # rows (Job/Candidate use a default manager that hides them). Without
+            # it a restore would fail to snapshot the pre-change state.
+            instance._audit_old = _snapshot(sender._base_manager.get(pk=instance.pk))
         except sender.DoesNotExist:
             instance._audit_old = None
     else:

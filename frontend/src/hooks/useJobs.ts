@@ -73,6 +73,8 @@ export function useJobActions(id: number) {
     if (data) qc.setQueryData(['jobs', 'detail', id], data);
     qc.invalidateQueries({ queryKey: ['jobs'] });
     qc.invalidateQueries({ queryKey: ['dashboard'] });
+    // Delete is a soft delete — the job now lives in the Recycle Bin.
+    qc.invalidateQueries({ queryKey: ['recycle-bin'] });
   };
 
   const archive = useMutation({

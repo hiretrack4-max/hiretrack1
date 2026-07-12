@@ -19,6 +19,7 @@ node_modules/
 frontend/dist/
 frontend/.vite/
 frontend/coverage/
+*.tsbuildinfo
 
 # ---- OS / IDE ----
 .DS_Store

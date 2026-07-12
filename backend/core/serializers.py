@@ -283,6 +283,27 @@ class CandidateSetStatusSerializer(serializers.Serializer):
 
 
 # ---------------------------------------------------------------------------
+# Recycle Bin — lightweight soft-deleted rows (candidates & jobs)
+# ---------------------------------------------------------------------------
+class RecycleBinCandidateSerializer(serializers.ModelSerializer):
+    """Compact soft-deleted candidate row for the Recycle Bin listing."""
+
+    class Meta:
+        model = Candidate
+        fields = ["id", "full_name", "candidate_status", "deleted_at", "created_at"]
+        read_only_fields = fields
+
+
+class RecycleBinJobSerializer(serializers.ModelSerializer):
+    """Compact soft-deleted job row for the Recycle Bin listing."""
+
+    class Meta:
+        model = Job
+        fields = ["id", "job_id", "job_role", "job_status", "deleted_at", "created_at"]
+        read_only_fields = fields
+
+
+# ---------------------------------------------------------------------------
 # Module 4 — Candidate Job Mapping (full, writable)
 # ---------------------------------------------------------------------------
 class CandidateJobMappingSerializer(serializers.ModelSerializer):
