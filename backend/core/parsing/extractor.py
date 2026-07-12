@@ -236,8 +236,20 @@ Rules:
 - "skills" are general/soft/professional skills; "technologies" are tools,
   languages, frameworks, and platforms. Put each item in the most appropriate
   list; do not duplicate an item across both lists.
-- If total experience is not stated explicitly, estimate it from the employment
-  history. relevant_experience_years may equal total when unclear.
+- "current_company" is the candidate's EMPLOYER (a business/organization). NEVER
+  put a school, college, or university name here — educational institutions
+  belong only in "highest_qualification"/education. Likewise "current_designation"
+  is a JOB title (e.g. "Senior Engineer"), never an academic degree.
+- "highest_qualification" is the academic degree and field of study (e.g.
+  "B.Tech, Computer Science" or "MBA, Finance"). NEVER put a company name or a
+  job title here.
+- "total_experience_years" is the total time the candidate has actually WORKED,
+  computed from their employment date ranges: merge overlapping periods and do
+  NOT count the same time twice; do NOT count years spent in education. If the
+  resume states a total explicitly, prefer that stated figure.
+  "relevant_experience_years" is the portion relevant to their core field
+  (exclude internships and unrelated roles); it may equal total when unclear and
+  must never exceed total_experience_years.
 - Return only the JSON object.
 
 RESUME TEXT:

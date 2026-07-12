@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Briefcase,
   Building2,
@@ -32,12 +33,24 @@ import type { Candidate } from '@/types/api';
 export function CandidateOverview({ candidate }: { candidate: Candidate }) {
   const toast = useToast();
   const update = useUpdateCandidate(candidate.id);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<CandidateFormState>(() => candidateToForm(candidate));
 
   useEffect(() => {
     if (!editing) setForm(candidateToForm(candidate));
   }, [candidate, editing]);
+
+  // Open straight into edit mode when arriving from the resume-upload screen
+  // (…/candidates/:id?edit=1), then strip the flag so a refresh/back won't re-open it.
+  useEffect(() => {
+    if (searchParams.get('edit') === '1') {
+      setEditing(true);
+      searchParams.delete('edit');
+      setSearchParams(searchParams, { replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const set = <K extends keyof CandidateFormState>(key: K, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -262,12 +275,12 @@ function Info({
   value: string;
 }) {
   return (
-    <div className="space-y-1">
-      <p className="flex items-center gap-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.08em] text-muted">
-        {Icon && <Icon className="h-3 w-3" />}
+    <div className="space-y-1.5">
+      <p className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted">
+        {Icon && <Icon className="h-3.5 w-3.5" />}
         {label}
       </p>
-      <p className="break-words text-[0.95rem] font-semibold leading-snug text-ink">{value}</p>
+      <p className="break-words text-[1.0625rem] font-medium leading-relaxed text-ink">{value}</p>
     </div>
   );
 }

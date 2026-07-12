@@ -4,6 +4,7 @@ import {
   ArrowLeft,
   CheckCircle2,
   FileText,
+  Pencil,
   Search,
   Upload,
   UploadCloud,
@@ -204,7 +205,12 @@ export default function ResumeUpload() {
 
       {/* Dropzone / progress / result */}
       {result ? (
-        <ResultCard result={result} onReset={reset} onView={(cid) => navigate(`/candidates/${cid}`)} />
+        <ResultCard
+          result={result}
+          onReset={reset}
+          onEdit={(cid) => navigate(`/candidates/${cid}?edit=1`)}
+          onView={(cid) => navigate(`/candidates/${cid}`)}
+        />
       ) : (
         <Card className="p-5">
           <div
@@ -280,10 +286,12 @@ export default function ResumeUpload() {
 function ResultCard({
   result,
   onReset,
+  onEdit,
   onView,
 }: {
   result: Resume;
   onReset: () => void;
+  onEdit: (candidateId: number) => void;
   onView: (candidateId: number) => void;
 }) {
   const parsed = result.parse_status === 'PARSED';
@@ -323,11 +331,26 @@ function ResultCard({
           </p>
         )}
 
+        {parsed && result.candidate && (
+          <p className="w-full rounded-xl border border-line bg-surface/50 px-3.5 py-2.5 text-left text-sm text-muted">
+            Auto-parsing isn't always perfect — open <span className="font-semibold text-ink">Review &amp; edit details</span> to
+            check the name, company, education and experience, and fix anything that looks off before you continue.
+          </p>
+        )}
+
         <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
           {result.candidate && (
-            <Button onClick={() => onView(result.candidate as number)}>View candidate profile</Button>
+            <>
+              <Button onClick={() => onEdit(result.candidate as number)}>
+                <Pencil className="h-4 w-4" />
+                Review &amp; edit details
+              </Button>
+              <Button variant="secondary" onClick={() => onView(result.candidate as number)}>
+                View profile
+              </Button>
+            </>
           )}
-          <Button variant="secondary" onClick={onReset}>
+          <Button variant="ghost" onClick={onReset}>
             <Upload className="h-4 w-4" />
             Upload another
           </Button>

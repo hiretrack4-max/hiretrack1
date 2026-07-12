@@ -47,6 +47,11 @@ services:
         value: "5432"
       - key: POSTGRES_SSLMODE
         value: "require"
+      # Claude AI resume parsing. Set ANTHROPIC_API_KEY to a key from
+      # console.anthropic.com to parse resumes with Claude (far more accurate at
+      # company/education/experience). Leave unset to use the free regex parser.
+      - key: ANTHROPIC_API_KEY
+        sync: false
       # S3-compatible resume storage (Supabase Storage or Cloudflare R2).
       # Leave unset to use local disk.
       - key: STORAGE_BUCKET
