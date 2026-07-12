@@ -615,6 +615,14 @@ class HeuristicResumeExtractor(ResumeExtractor):
                 relevant_exp = float(rm.group(1))
                 break
 
+        # Keep the two figures coherent regardless of which source won:
+        #  * relevant experience can never exceed total experience;
+        #  * if we know the total but never found a relevant figure, mirror it.
+        if total_exp is not None and relevant_exp is not None and relevant_exp > total_exp:
+            relevant_exp = total_exp
+        if relevant_exp is None and total_exp is not None:
+            relevant_exp = total_exp
+
         if total_exp is None:
             flags.append("totalExp")
         if relevant_exp is None:
@@ -718,7 +726,11 @@ class HeuristicResumeExtractor(ResumeExtractor):
         raw_lines = [ln.strip() for ln in text.split("\n")]
         sec = self._slice_experience(raw_lines)
         if not sec:
-            sec = raw_lines
+            # No explicit "Experience" header — scan the whole document, but drop
+            # lines that clearly belong to education so college/degree date
+            # ranges (e.g. "B.Tech, XYZ University, 2016 – 2020") are never
+            # counted as work experience.
+            sec = [ln for ln in raw_lines if not _EDU_RE.search(ln)]
         ranges = self._parse_ranges(sec)
         if not ranges:
             return {"total": None, "relevant": None, "stints": [], "experiences": []}

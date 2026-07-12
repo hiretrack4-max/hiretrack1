@@ -275,12 +275,14 @@ function Info({
   value: string;
 }) {
   return (
-    <div className="space-y-1.5">
-      <p className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted">
-        {Icon && <Icon className="h-3.5 w-3.5" />}
+    <div className="min-w-0 space-y-1">
+      <p className="flex items-center gap-1.5 text-xs font-medium text-muted">
+        {Icon && <Icon className="h-3.5 w-3.5 shrink-0" />}
         {label}
       </p>
-      <p className="break-words text-[1.0625rem] font-medium leading-relaxed text-ink">{value}</p>
+      <p className="break-words text-[0.9375rem] font-semibold leading-[1.45] text-ink [overflow-wrap:anywhere]">
+        {value}
+      </p>
     </div>
   );
 }

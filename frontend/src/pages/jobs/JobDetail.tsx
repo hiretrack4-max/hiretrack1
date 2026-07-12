@@ -205,12 +205,14 @@ export default function JobDetail() {
               {overview.map((item) => {
                 const Icon = item.icon;
                 return (
-                  <div key={item.label} className="space-y-1.5">
-                    <p className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted">
-                      <Icon className="h-3.5 w-3.5" />
+                  <div key={item.label} className="min-w-0 space-y-1">
+                    <p className="flex items-center gap-1.5 text-xs font-medium text-muted">
+                      <Icon className="h-3.5 w-3.5 shrink-0" />
                       {item.label}
                     </p>
-                    <p className="text-[1.0625rem] font-medium leading-relaxed text-ink">{item.value}</p>
+                    <p className="break-words text-[0.9375rem] font-semibold leading-[1.45] text-ink [overflow-wrap:anywhere]">
+                      {item.value}
+                    </p>
                   </div>
                 );
               })}
