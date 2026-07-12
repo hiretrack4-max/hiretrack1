@@ -14,7 +14,11 @@ services:
     buildCommand: "bash ./build.sh"
     # Must bind 0.0.0.0 and Render's $PORT (default gunicorn 127.0.0.1:8000 is
     # unreachable by Render's router → health-check timeout).
-    startCommand: "gunicorn hiretrack.wsgi:application --bind 0.0.0.0:$PORT"
+    # Threaded worker (gthread): keeps the app responsive while one request is
+    # busy (e.g. a slow resume parse) instead of blocking, and does NOT kill
+    # long-running requests the way the default sync worker's 30s timeout does
+    # (that was causing "network error" on slow mobile resume uploads).
+    startCommand: "gunicorn hiretrack.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --threads 8 --timeout 120"
     # Must return 2xx without auth, else Render marks the deploy unhealthy.
     # The admin login page renders 200; the API endpoints require a token (401).
     healthCheckPath: /admin/login/
