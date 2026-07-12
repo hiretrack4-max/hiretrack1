@@ -229,7 +229,10 @@ if not DEBUG:
     # Render/Vercel terminate TLS at the edge and forward X-Forwarded-Proto, so
     # Django can tell an HTTPS request from the proxied header.
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", True)
+    # Render's edge already redirects HTTP→HTTPS. An app-level redirect would
+    # 301 Render's internal (plain-HTTP) health check and fail the deploy, so
+    # default it OFF here (set DJANGO_SECURE_SSL_REDIRECT=True to force it on).
+    SECURE_SSL_REDIRECT = env_bool("DJANGO_SECURE_SSL_REDIRECT", False)
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = int(os.getenv("DJANGO_HSTS_SECONDS", "3600"))

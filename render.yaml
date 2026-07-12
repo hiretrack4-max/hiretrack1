@@ -12,7 +12,9 @@ services:
     branch: main
     autoDeploy: true          # redeploy automatically on every push to main
     buildCommand: "bash ./build.sh"
-    startCommand: "gunicorn hiretrack.wsgi:application"
+    # Must bind 0.0.0.0 and Render's $PORT (default gunicorn 127.0.0.1:8000 is
+    # unreachable by Render's router → health-check timeout).
+    startCommand: "gunicorn hiretrack.wsgi:application --bind 0.0.0.0:$PORT"
     # Must return 2xx without auth, else Render marks the deploy unhealthy.
     # The admin login page renders 200; the API endpoints require a token (401).
     healthCheckPath: /admin/login/
