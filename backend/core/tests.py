@@ -9,7 +9,10 @@ database is touched, so the suite runs without creating a test DB.
 """
 from django.test import SimpleTestCase
 
-from core.parsing.extractor import _TOTAL_EXP_RE, HeuristicResumeExtractor
+from core.parsing.extractor import (
+    _TOTAL_EXP_RE,
+    HeuristicResumeExtractor,
+)
 from core.parsing.job_extractor import HeuristicJobDescriptionExtractor
 
 
@@ -115,3 +118,50 @@ class ResumeNameAddressParsingTests(SimpleTestCase):
         r = self.extract(text)
         self.assertEqual(r.current_location, "Bengaluru")
         self.assertEqual(r.address, r.current_location)
+
+
+class ResumeRoleCompanyParsingTests(SimpleTestCase):
+    """Company/designation split fixes from the 5-sample QA pass (2026-07-13).
+
+    * a multi-part title keeps its comma clause (never truncated at the comma);
+    * a glued "Title Company" run with no separator splits at the title word,
+      so the employer tail (hospital/bank/etc.) is not lost;
+    * a city is never accepted as the employer.
+    """
+
+    def setUp(self):
+        self.split = HeuristicResumeExtractor._split_role_company
+
+    def test_multipart_title_keeps_comma_clause(self):
+        # Regression: "Senior Manager, Product Engineering" was truncated to
+        # "Senior Manager" because the splitter cut at the comma.
+        desg, comp = self.split(
+            ["Senior Manager, Product Engineering — Bharat Drivetrain Systems Ltd"]
+        )
+        self.assertEqual(desg, "Senior Manager, Product Engineering")
+        self.assertEqual(comp, "Bharat Drivetrain Systems Ltd")
+
+    def test_glued_title_company_splits_at_title(self):
+        # Regression: "Senior ICU Nurse Fortis Multispecialty Hospital" had no
+        # separator, so the whole run became the title and the employer fell
+        # back to a nearby city ("Bengaluru").
+        desg, comp = self.split(
+            [
+                "Senior ICU Nurse Fortis Multispecialty Hospital",
+                "",
+                "18-bed medical-surgical ICU, Bengaluru",
+            ]
+        )
+        self.assertEqual(desg, "Senior ICU Nurse")
+        self.assertEqual(comp, "Fortis Multispecialty Hospital")
+
+    def test_city_never_used_as_company(self):
+        # A trailing city after a strong separator must not become the employer.
+        desg, comp = self.split(["Marketing Manager — Mumbai"])
+        self.assertEqual(desg, "Marketing Manager")
+        self.assertEqual(comp, "")
+
+    def test_em_dash_title_company(self):
+        desg, comp = self.split(["Senior Brand Designer — Studio Marigold"])
+        self.assertEqual(desg, "Senior Brand Designer")
+        self.assertEqual(comp, "Studio Marigold")

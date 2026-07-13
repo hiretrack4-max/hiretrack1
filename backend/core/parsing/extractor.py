@@ -454,6 +454,17 @@ _TITLE_RE = re.compile(
     re.IGNORECASE,
 )
 _INTERN_RE = re.compile(r"\bintern(ship)?\b|\btrainee\b", re.IGNORECASE)
+# Broader employer-indicator words (COMPANY_RE + workplaces like hospitals,
+# banks, agencies). Used to split a glued "Title Company" run where no separator
+# was present in the source line.
+_ORG_RE = re.compile(
+    r"\b(pvt\.?|private|ltd\.?|limited|llp|inc\.?|llc|corp\.?|corporation|"
+    r"technologies|technology|infotech|systems|solutions|consulting|consultancy|"
+    r"labs|enterprises|industries|manpower|associates|holdings|ventures|group|"
+    r"company|co\.|hospital|clinic|healthcare|bank|capital|partners|media|agency|"
+    r"studio|foundation|bureau|services)\b",
+    re.IGNORECASE,
+)
 
 # --- Section slicing (reference HEAD_EXP / HEAD_EDU / HEAD_OTHER) ------------
 _HEAD_EXP = re.compile(
@@ -876,14 +887,44 @@ class HeuristicResumeExtractor(ResumeExtractor):
 
     @staticmethod
     def _split_role_company(candidates: list[str]) -> tuple[str, str]:
-        """Work out which token is the job title and which is the employer."""
+        """Work out which token is the job title and which is the employer.
+
+        Strategy: first try a strong "Title <sep> Company" split on the primary
+        line (— – | / "at" / a big gap), keeping any comma *inside* the title
+        (e.g. "Senior Manager, Product Engineering"). Failing that, scan tokens
+        and, as a last resort, split a glued "Title Company" run at the job-title
+        boundary (e.g. "Senior ICU Nurse Fortis Multispecialty Hospital"). A city
+        is never accepted as the employer.
+        """
+        # 1) strong separator on the primary line
+        for s in candidates:
+            if not s:
+                continue
+            parts = re.split(
+                r"\s+[—–|]\s+|\s{2,}|\s+at\s+", s, maxsplit=1, flags=re.IGNORECASE
+            )
+            if len(parts) != 2:
+                continue
+            a = re.sub(r"[.,;]$", "", parts[0].strip())
+            b = re.sub(r"[.,;]$", "", parts[1].strip())
+            if not (1 < len(a) < 90 and 1 < len(b) < 90):
+                continue
+            if _TITLE_RE.search(b) and not _TITLE_RE.search(a):
+                desg, comp = b, a  # reversed "Company — Title"
+            else:
+                desg, comp = a, b  # default "Title — Company"
+            if _city_in(comp):
+                return desg[:90], ""  # keep the title, drop a city-as-company
+            return desg[:90], comp[:90]
+
+        # 2) token scan
         tokens: list[str] = []
         for s in candidates:
             if not s:
                 continue
-            for x in re.split(r"\s+[—–|]\s+|\s{2,}|\s+at\s+|,\s*", s, flags=re.IGNORECASE):
+            for x in re.split(r"\s{2,}|\s+at\s+|,\s*", s, flags=re.IGNORECASE):
                 x = re.sub(r"[.,;]$", "", x.strip())
-                if 1 < len(x) < 60:
+                if 1 < len(x) < 90:
                     tokens.append(x)
         designation = next(
             (t for t in tokens if _TITLE_RE.search(t) and not _COMPANY_RE.search(t)), ""
@@ -896,11 +937,24 @@ class HeuristicResumeExtractor(ResumeExtractor):
                 (
                     t
                     for t in tokens
-                    if t != designation and re.match(r"^[A-Z]", t) and len(t.split()) <= 5
+                    if t != designation
+                    and re.match(r"^[A-Z]", t)
+                    and len(t.split()) <= 5
+                    and not _city_in(t)
                 ),
                 "",
             )
-        return designation, company
+        # 3) glued "Title Company" with no separator at all — split at the last
+        # job-title word so the employer tail (hospital/bank/etc.) breaks off.
+        if not company and designation and _ORG_RE.search(designation):
+            words = designation.split()
+            last_title = max(
+                (i for i, w in enumerate(words) if _TITLE_RE.search(w)), default=-1
+            )
+            if 0 <= last_title < len(words) - 1:
+                company = " ".join(words[last_title + 1 :]).strip()
+                designation = " ".join(words[: last_title + 1]).strip()
+        return designation[:90], company[:90]
 
     @staticmethod
     def _nearby(lines: list[str], i: int, direction: int) -> str:
