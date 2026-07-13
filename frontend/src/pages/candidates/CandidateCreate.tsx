@@ -44,6 +44,7 @@ export default function CandidateCreate() {
   const createCandidate = useCreateCandidate();
 
   const [phase, setPhase] = useState<'upload' | 'review'>('upload');
+  const [manual, setManual] = useState(false);
   const [form, setForm] = useState<CandidateFormState>(blankCandidateForm);
   // The resume the user dropped, held in memory until they click Save. NOTHING
   // is written to the database until then — dropping a resume no longer creates
@@ -64,6 +65,7 @@ export default function CandidateCreate() {
       toast.error('Unsupported file', 'Please upload a PDF, DOC or DOCX file.');
       return;
     }
+    setManual(false);
     setFileName(selected.name);
     setProgress(0);
     preview.mutate(
@@ -96,6 +98,7 @@ export default function CandidateCreate() {
     setForm(blankCandidateForm());
     setPendingFile(null);
     setParsedFrom('');
+    setManual(true);
     setPhase('review');
   };
 
@@ -162,91 +165,109 @@ export default function CandidateCreate() {
         eyebrow="Talent"
         eyebrowIcon={UserPlus}
         title="Add Candidate"
-        description="Upload a resume to auto-fill the profile, review every field, then save."
+        description="Upload a resume to auto-fill the profile, or enter the basic details yourself — then review and save."
       />
 
-      <Steps phase={phase} />
+      {!manual && <Steps phase={phase} />}
 
       {phase === 'upload' ? (
-        <Card className="p-5">
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={() => !uploading && inputRef.current?.click()}
-            onKeyDown={(e) => {
-              if ((e.key === 'Enter' || e.key === ' ') && !uploading) inputRef.current?.click();
-            }}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDragging(true);
-            }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={onDrop}
-            className={cn(
-              'flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-14 text-center transition-all',
-              dragging
-                ? 'border-brand-500 bg-brand-500/8'
-                : 'border-line bg-surface/40 hover:border-brand-300',
-              uploading && 'pointer-events-none opacity-80',
-            )}
-          >
-            <span className="flex h-16 w-16 items-center justify-center rounded-3xl bg-brand-gradient text-white shadow-brand">
-              <UploadCloud className="h-8 w-8" />
-            </span>
-            {uploading ? (
-              <div className="w-full max-w-xs space-y-2">
-                <p className="text-sm font-medium text-ink">Uploading {fileName}…</p>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-muted/15">
-                  <div
-                    className="h-full rounded-full bg-brand-gradient transition-all duration-200"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                <p className="text-2xs text-muted">
-                  {progress < 100 ? `${progress}%` : 'Parsing resume…'}
-                </p>
+        <div className="space-y-4">
+          {/* Two equal ways to add a candidate */}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="flex items-start gap-3 rounded-2xl border border-brand-400 bg-brand-500/8 p-4 text-left shadow-brand-sm">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-500/12 text-brand-600 dark:text-brand-300">
+                <UploadCloud className="h-4 w-4" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-ink">Upload a resume</p>
+                <p className="text-2xs text-muted">Auto-fill the profile from a PDF, DOC or DOCX.</p>
               </div>
-            ) : (
-              <>
-                <div>
-                  <p className="text-sm font-semibold text-ink">
-                    Drag &amp; drop a resume, or click to browse
-                  </p>
-                  <p className="mt-1 text-xs text-muted">PDF, DOC or DOCX · single file</p>
-                </div>
-                <Button type="button" variant="secondary" size="sm">
-                  <Upload className="h-4 w-4" />
-                  Choose file
-                </Button>
-              </>
-            )}
-            <input
-              ref={inputRef}
-              type="file"
-              accept={ACCEPT}
-              className="hidden"
-              onChange={(e) => {
-                const selected = e.target.files?.[0];
-                if (selected) startUpload(selected);
-              }}
-            />
+            </div>
+            <button
+              type="button"
+              onClick={startManual}
+              disabled={uploading}
+              className="flex items-start gap-3 rounded-2xl border border-line bg-surface/50 p-4 text-left transition-all hover:border-brand-300 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-500/12 text-brand-600 dark:text-brand-300">
+                <PencilLine className="h-4 w-4" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-ink">Enter details manually</p>
+                <p className="text-2xs text-muted">Type the candidate’s basic details yourself — no resume needed.</p>
+              </div>
+            </button>
           </div>
 
-          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted">
-            <span className="h-px w-8 bg-line" />
-            or
-            <span className="h-px w-8 bg-line" />
-          </div>
-          <div className="mt-3 flex justify-center">
-            <Button variant="ghost" size="sm" onClick={startManual} disabled={uploading}>
-              <PencilLine className="h-4 w-4" />
-              Enter details manually
-            </Button>
-          </div>
-        </Card>
+          {/* Resume dropzone (for the "Upload a resume" option) */}
+          <Card className="p-5">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => !uploading && inputRef.current?.click()}
+              onKeyDown={(e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && !uploading) inputRef.current?.click();
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragging(true);
+              }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={onDrop}
+              className={cn(
+                'flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed px-6 py-14 text-center transition-all',
+                dragging
+                  ? 'border-brand-500 bg-brand-500/8'
+                  : 'border-line bg-surface/40 hover:border-brand-300',
+                uploading && 'pointer-events-none opacity-80',
+              )}
+            >
+              <span className="flex h-16 w-16 items-center justify-center rounded-3xl bg-brand-gradient text-white shadow-brand">
+                <UploadCloud className="h-8 w-8" />
+              </span>
+              {uploading ? (
+                <div className="w-full max-w-xs space-y-2">
+                  <p className="text-sm font-medium text-ink">Uploading {fileName}…</p>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted/15">
+                    <div
+                      className="h-full rounded-full bg-brand-gradient transition-all duration-200"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <p className="text-2xs text-muted">
+                    {progress < 100 ? `${progress}%` : 'Parsing resume…'}
+                  </p>
+                </div>
+              ) : (
+                <>
+                  <div>
+                    <p className="text-sm font-semibold text-ink">
+                      Drag &amp; drop a resume, or click to browse
+                    </p>
+                    <p className="mt-1 text-xs text-muted">PDF, DOC or DOCX · single file</p>
+                  </div>
+                  <Button type="button" variant="secondary" size="sm">
+                    <Upload className="h-4 w-4" />
+                    Choose file
+                  </Button>
+                </>
+              )}
+              <input
+                ref={inputRef}
+                type="file"
+                accept={ACCEPT}
+                className="hidden"
+                onChange={(e) => {
+                  const selected = e.target.files?.[0];
+                  if (selected) startUpload(selected);
+                }}
+              />
+            </div>
+          </Card>
+        </div>
       ) : (
         <Card className="p-5">
-          {parsedFrom && (
+          {parsedFrom ? (
             <div className="mb-4 flex items-start gap-2.5 rounded-xl border border-brand-400/40 bg-brand-500/8 p-3">
               <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
               <p className="text-sm text-ink">
@@ -254,7 +275,14 @@ export default function CandidateCreate() {
                 saved yet — review and edit any field below, then click Save.
               </p>
             </div>
-          )}
+          ) : manual ? (
+            <div className="mb-4 flex items-center gap-2.5">
+              <PencilLine className="h-4 w-4 shrink-0 text-brand-500" />
+              <p className="text-sm text-muted">
+                Enter the candidate’s basic details, then click Save. You can add a resume later.
+              </p>
+            </div>
+          ) : null}
           <CandidateFormFields form={form} set={set} />
           <div className="mt-5 flex justify-end gap-2 border-t border-line pt-4">
             <Button variant="ghost" onClick={() => navigate('/candidates')} disabled={saving}>
