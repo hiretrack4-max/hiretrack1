@@ -515,6 +515,15 @@ _CUR_DESIGNATION_RE = re.compile(
 )
 _NAME_SKIP_RE = re.compile(r"@|\d{5}|resume|curriculum|vitae|linkedin|github|http", re.IGNORECASE)
 _NAME_OK_RE = re.compile(r"^[A-Za-z][A-Za-z.'\- ]+$")
+# Section-header / noise words that some multi-column PDF extractions glue onto
+# the name line (e.g. "Rohan Mehta SUMMARY"). Stripped before the name is
+# accepted so a section label never leaks into the candidate's name.
+_NAME_NOISE_RE = re.compile(
+    r"\b(summary|profile|objective|contact|experience|education|skills?|"
+    r"professional|personal|details|about(?:\s+me)?|introduction|resume|"
+    r"curriculum\s+vitae|\bcv\b)\b",
+    re.IGNORECASE,
+)
 _CERT_RE = re.compile(r"certifi(?:ed|cation)[^\n]{0,80}", re.IGNORECASE)
 
 
@@ -592,12 +601,15 @@ class HeuristicResumeExtractor(ResumeExtractor):
         for ln in lines[:8]:
             if _NAME_SKIP_RE.search(ln):
                 continue
-            words = ln.split()
-            if 2 <= len(words) <= 4 and _NAME_OK_RE.match(ln):
-                name = re.sub(r"\s+", " ", ln)
+            # Strip any section-header word glued onto the line — multi-column
+            # PDFs often merge the name with an adjacent "SUMMARY" / "CONTACT".
+            candidate = re.sub(r"\s+", " ", _NAME_NOISE_RE.sub(" ", ln)).strip()
+            words = candidate.split()
+            if 2 <= len(words) <= 4 and _NAME_OK_RE.match(candidate):
+                name = candidate
                 break
         if not name and lines:
-            name = lines[0][:60]
+            name = re.sub(r"\s+", " ", _NAME_NOISE_RE.sub(" ", lines[0])).strip()[:60]
         if not name:
             flags.append("name")
 
@@ -630,10 +642,18 @@ class HeuristicResumeExtractor(ResumeExtractor):
 
         # --- location / address ---------------------------------------------
         address, location = self._extract_address(text)
-        if not location and address:
+        # Prefer the city named in the contact header (the first lines of the
+        # resume) — that is the candidate's OWN location. The free-form address
+        # scan can otherwise latch onto a workplace or education address that
+        # merely contains a city (e.g. "18-bed ICU, Bengaluru").
+        header_city = _city_in(" ".join(lines[:8]))
+        if header_city:
+            location = header_city
+        elif not location and address:
             location = _derive_location(address)
-        if not address and location:
-            address = location
+        # Product decision: use the current location as the address so a
+        # workplace/college address is never surfaced as the home address.
+        address = location
         if not address:
             flags.append("address")
         if not location:

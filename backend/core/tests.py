@@ -9,7 +9,7 @@ database is touched, so the suite runs without creating a test DB.
 """
 from django.test import SimpleTestCase
 
-from core.parsing.extractor import _TOTAL_EXP_RE
+from core.parsing.extractor import _TOTAL_EXP_RE, HeuristicResumeExtractor
 from core.parsing.job_extractor import HeuristicJobDescriptionExtractor
 
 
@@ -67,3 +67,51 @@ class ResumeExperienceParsingTests(SimpleTestCase):
         )
         self.assertIsNotNone(m)
         self.assertEqual(m.group(1), "34")
+
+
+class ResumeNameAddressParsingTests(SimpleTestCase):
+    """Name/location fixes from the 5-sample QA pass (2026-07-13).
+
+    * a section header glued onto the name line (multi-column PDFs) is stripped;
+    * location comes from the contact header, not a workplace/education line;
+    * the address mirrors that location (never a workplace/college address).
+    """
+
+    def setUp(self):
+        self.extract = HeuristicResumeExtractor().extract
+
+    def test_section_header_stripped_from_name(self):
+        # Regression: table/sidebar PDF merged the name with the SUMMARY header
+        # -> "Rohan Mehta SUMMARY".
+        r = self.extract(
+            "Rohan Mehta SUMMARY\nFinancial Analyst\nCONTACT\n"
+            "Gurugram, India\n+91-9871123456\nrohan.mehta@gmail.com\n"
+        )
+        self.assertEqual(r.full_name, "Rohan Mehta")
+
+    def test_location_from_header_not_workplace_line(self):
+        # Regression: the address scan picked "Multi-brand retail, Pune" from an
+        # experience bullet and reported Pune, though the header says Mumbai.
+        text = (
+            "PRIYA SHARMA\n"
+            "Digital Marketing Manager\n"
+            "Mumbai, India | +91-9822011456 | priya@gmail.com | linkedin.com/in/x\n"
+            "PROFESSIONAL EXPERIENCE\n"
+            "Senior Manager - BrightWave Mar 2022 - Present\n"
+            "Multi-brand retail, Pune\n"
+        )
+        r = self.extract(text)
+        self.assertEqual(r.current_location, "Mumbai")
+
+    def test_address_mirrors_location(self):
+        # Address must equal the current location, never a workplace address.
+        text = (
+            "Dr. Ananya Rao\nRegistered Nurse\n"
+            "Bengaluru, India +91-9945122380 ananya@gmail.com\n"
+            "PROFESSIONAL EXPERIENCE\n"
+            "Senior ICU Nurse Fortis Hospital Apr 2021 - Present\n"
+            "18-bed medical-surgical ICU, Bengaluru\n"
+        )
+        r = self.extract(text)
+        self.assertEqual(r.current_location, "Bengaluru")
+        self.assertEqual(r.address, r.current_location)
